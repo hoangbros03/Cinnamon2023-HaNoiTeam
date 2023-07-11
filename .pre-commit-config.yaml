@@ -25,9 +25,9 @@ repos:
       - id: flake8
         args:
           [
-            "--ignore=D100, D200, D205, D400, D401, D104, W503, W504",
-            "D401",
-            "--max-line-length 88",
+            "--ignore=D100, D200, D205, D400, D401, D104, W503, W504,D401",
+            "--max-line-length",
+            "88",
           ]
         additional_dependencies:
           [

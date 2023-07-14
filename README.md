@@ -1,3 +1,25 @@
-The folder structure is based on this article: https://medium.com/analytics-vidhya/folder-structure-for-machine-learning-projects-a7e451a8caaa
+# Instruction to install pre-commit
 
-Data folder normally ignored before pushing into the remote repo. It will be removed soon. You should either clone or pull this commit to unify how data folder structured.
+Step 1: Install pre-commit package
+
+Using pip:
+```
+pip install pre-commit
+```
+
+Using conda:
+```
+conda install -c conda-forge pre-commit
+```
+
+Step 2: Check version of pre-commit to ensure it downloaded
+```
+pre-commit --version
+```
+
+Step 3: Set up the git hook scripts
+```
+pre-commit install
+```
+
+Step 4: Enjoy fixing failed tests from pre-commit :)

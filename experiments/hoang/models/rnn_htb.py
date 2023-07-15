@@ -1,11 +1,13 @@
 # Import libs and frameworks
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import logging
 
+import torch
+import torch.nn as nn
+
 # Logger
+logging.basicConfig(format="%(asctime)s %(message)s")
 log = logging.getLogger("test_logger")
+log.setLevel(logging.DEBUG)
 
 
 class RNN(nn.Module):
@@ -36,13 +38,29 @@ class RNN(nn.Module):
         -------
         Nothing.
         """
-        if any(x < 0 for x in [input_size, hidden_size, output_size]):
+        if (
+            type(input_size) != int
+            or type(hidden_size) != int
+            or type(output_size) != int
+            or type(activation1) != str
+            or type(activation2) != str
+        ):
+            raise TypeError("Wrong input type!")
+        if any(x <= 0 for x in [input_size, hidden_size, output_size]):
             log.error(
+                "Negative or zero number(s) is/are passed in the parameters. "
+                "Please review and re-init the object."
+            )
+            raise ValueError(
                 "Negative number detected in the parameters. Please review and"
                 " re-init the object."
             )
         if type(bias) != bool:
             log.error(
+                "Bias parameter is not bool variable. Please review and"
+                " re-init the object."
+            )
+            raise TypeError(
                 "Bias parameter is not bool variable. Please review and"
                 " re-init the object."
             )
@@ -101,7 +119,7 @@ class RNN(nn.Module):
             self.a = a_t
             y_t = self.activation2(self.ya(a_t))
         else:
-            a_t = self.activation1(self.aa(self.axa) + self.ax(x) + self.ba)
+            a_t = self.activation1(self.aa(self.a) + self.ax(x) + self.ba)
             self.a = a_t
             y_t = self.activation2(self.ya(a_t) + self.by)
         #         print(a_t.shape)
@@ -145,11 +163,11 @@ class manyToOneRNN(nn.Module):
         -------
         Nothing
         """
+        if type(input_times) != int:
+            raise TypeError("input times must be int")
         if input_times < 1:
-            log.error(
-                "Input times less than 1. This object stills be created but"
-                " won't work!"
-            )
+            log.error("Input times less than 1")
+            raise ValueError("Input times less than 1")
         super(manyToOneRNN, self).__init__()
         self.rnn = RNN(
             input_size,
@@ -173,7 +191,7 @@ class manyToOneRNN(nn.Module):
         """
         if x.clone().detach().shape[1] != self.input_times:
             log.error("Wrong input size!")
-            return
+            raise ValueError("Wrong input size!")
         for i in range(x.shape[1]):
             y_t = self.rnn.forward(x[:, i, :])
         self.reset_a()
@@ -217,13 +235,17 @@ class oneToManyRNN(nn.Module):
         -------
         Nothing
         """
+        if type(output_times) != int:
+            raise TypeError("Output times is not int")
         if output_times < 1:
-            log.error(
-                "Output times < 1. It will cause errors in the future. Please"
-                " re-init the object."
-            )
+            log.error("Output times < 1.")
+            raise ValueError("Output times < 1.")
         if input_size != output_size:
             log.error(
+                "Input size and output size is different. This object stills"
+                " be created but won't work!"
+            )
+            raise ValueError(
                 "Input size and output size is different. This object stills"
                 " be created but won't work!"
             )
@@ -255,7 +277,7 @@ class oneToManyRNN(nn.Module):
         y_t = self.rnn.forward(x)
         result = torch.cat((result, y_t), 0)
         #         print(result)
-        for i in range(self.output_times - 1):
+        for _ in range(self.output_times - 1):
             y_t = self.rnn.forward(y_t)
             result = torch.cat((result, y_t), 0)
         #             print(y_t)
@@ -306,16 +328,20 @@ class manyToManyRNN(nn.Module):
         -------
         Nothing
         """
+        if type(output_times) != int or type(input_times) != int:
+            raise TypeError("type(s) of parameters passed is/are wrong.")
         if output_times < 1 or input_times < 1:
             log.error(
                 "Either input times or output times < 1. It will cause errors"
                 " in the future. Please re-init the object."
             )
-        if input_size != output_size:
-            log.error(
-                "Input size and output size is different. This object stills"
-                " be created but won't work!"
+            raise ValueError(
+                "Either input times or output times < 1. It will cause errors"
+                " in the future. Please re-init the object."
             )
+        if input_size != output_size:
+            log.error("Input size and output size is different.")
+            raise ValueError("Input size and output size is different.")
         super(manyToManyRNN, self).__init__()
         self.rnn = RNN(
             input_size,
@@ -341,6 +367,7 @@ class manyToManyRNN(nn.Module):
         """
         if len(x.shape) != 3:
             log.error("Wrong input size!")
+            raise ValueError("Wrong input size!")
         result = torch.tensor([])
         if self.simultaneous:
             for i in range(x.shape[1]):
@@ -351,7 +378,7 @@ class manyToManyRNN(nn.Module):
             for i in range(x.shape[1]):
                 y_t = self.rnn.forward(x[:, i, :])
 
-            for i in range(self.output_times):
+            for _ in range(self.output_times):
                 y_t = self.rnn.forward(y_t)
                 result = torch.cat((result, y_t), 0)
         self.reset_a()
@@ -370,3 +397,7 @@ class manyToManyRNN(nn.Module):
         Nothing
         """
         self.rnn.reset_a()
+
+
+if __name__ == "__main__":
+    log.debug("Nothing here!")

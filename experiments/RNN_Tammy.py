@@ -85,53 +85,7 @@ class RNNCell(nn.Module):
                 torch.nn.init.xavier_uniform_(param)
 
 
-class RNN(nn.Module):
-    """
-    Implement RNN model
-    """
-
-    def __init__(
-        self,
-        input_size: int,
-        hidden_size: int,
-        output_size: int,
-        num_layers: int,
-        bias: bool,
-        activation="str",
-    ) -> None:
-        """
-        Recurrent Neural Network (RNN) model.
-        Parameters
-        --------
-            input_size: int
-                Number of features in the input x
-            hidden_size: int
-                Number of features in the hidden state h
-            output_size: int
-                Number of features in the output y
-            num_layers: int
-                Number of RNN cell layers
-            bias: bool
-                Whether to include a bias term in the linear transformations
-            activation: str
-                Activation function to apply to the hidden state,
-                there are 2 options: tanh and relu
-        Returns
-        --------
-        None
-        """
-        super(RNN, self).__init__()
-        self.input_size = input_size
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
-        self.bias = bias
-        self.output_size = output_size
-        if activation not in ["tanh", "relu"]:
-            raise ValueError("Invalid activation function")
-        self.fc = nn.Linear(hidden_size, output_size, bias=self.bias)
-        self.init_layer(activation)
-
-    def forward(self, input, hs_pre=None) -> torch.Tensor:
+    def forward(self, input, hs_pre=None) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Computes the forward propagation of the RNN model
         Parameters
@@ -143,9 +97,11 @@ class RNN(nn.Module):
                 (num_layers, batch_size, hidden_size).
                 Default is None, the initial hidden state is set to zeros
 
-        Returns:
+        Returns: tuple[torch.Tensor, torch.Tensor]
             out: torch.Tensor
                 Output tensor of shape (batch_size, output_size)
+            hs_final: torch.Tensor
+                Final hidden state of shape (num_layers, batch_size, hidden_size)
         """
         if hs_pre is None:
             hs_pre = torch.zeros(self.num_layers, input.size(0), self.hidden_size)
@@ -165,7 +121,8 @@ class RNN(nn.Module):
             output.append(hidden)
         out = output[-1].squeeze()
         out = self.fc(out)
-        return out
+        hs_final = torch.stack(hidden_layers, dim=0)
+        return out, hs_final 
 
     def init_layer(self, activation: str):
         """

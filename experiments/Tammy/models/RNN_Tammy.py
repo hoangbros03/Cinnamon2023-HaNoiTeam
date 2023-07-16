@@ -51,7 +51,7 @@ class RNNCell(nn.Module):
                 Input tensor of shape (batch_size, input_size).
             hs_pre: torch.Tensor
                 Previous hidden state tensor of shape (batch_size, hidden_size)
-                 Default is None, the initial hidden state is set to zeros.
+                Default is None, the initial hidden state is set to zeros.
         Returns
         -------
             hs: torch.Tensor

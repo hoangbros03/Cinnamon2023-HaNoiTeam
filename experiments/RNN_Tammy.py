@@ -197,15 +197,3 @@ class RNN(nn.Module):
                 self.rnn_cell_list.append(
                     RNNCell(self.hidden_size, self.hidden_size, self.bias, "relu")
                 )
-
-
-if __name__ == "__main__":
-    input_dim = 28  # input dimension
-    hidden_dim = 100  # hidden layer dimension
-    layer_dim = 1  # number of hidden layers
-    output_dim = 10
-    batch_size = 100
-    seq_len = 28
-    rnn = RNN(28, 100, 10, 1, True, "tanh")
-    x = torch.rand(batch_size, seq_len, input_dim)
-    print(rnn.forward(x).size())

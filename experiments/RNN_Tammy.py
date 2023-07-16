@@ -128,7 +128,7 @@ class RNN(nn.Module):
         self.output_size = output_size
         if activation not in ["tanh", "relu"]:
             raise ValueError("Invalid activation function")
-        self.fc = nn.Linear(hidden_size, output_size)
+        self.fc = nn.Linear(hidden_size, output_size, bias=self.bias)
         self.init_layer(activation)
 
     def forward(self, input, hs_pre=None) -> torch.Tensor:

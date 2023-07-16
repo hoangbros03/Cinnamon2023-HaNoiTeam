@@ -81,7 +81,8 @@ class RNNCell(nn.Module):
             if "weight" in name:
                 torch.nn.init.xavier_uniform_(param)
             if "bias" in name:
-                nn.init.zeros_(param)
+                param = param.view(1, param.size(0))
+                torch.nn.init.xavier_uniform_(param)
 
 
 class RNN(nn.Module):

@@ -134,8 +134,8 @@ class GRU(nn.Module):
         self,
         input_size: int,
         hidden_size: int,
-        num_layers: int,
         output_size: int,
+        num_layers: int,
         bias: bool = True,
     ) -> None:
         """
@@ -167,7 +167,9 @@ class GRU(nn.Module):
         self.fc = nn.Linear(self.hidden_size, self.output_size)
         self.init_cell_list()
 
-    def forward(self, input: torch.Tensor, hs_pre: torch.Tensor = None) -> torch.Tensor:
+    def forward(
+        self, input: torch.Tensor, hs_pre: torch.Tensor = None
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Forward pass of the GRU model.
         Parameters
@@ -177,10 +179,11 @@ class GRU(nn.Module):
           hs_pre: torch.Tensor
             Previous hidden state tensor of shape (batch_size, hidden_size)
             Default is None, the initial hidden state is set to zeros.
-        Returns
-        --------
-          output: torch.Tensor
-            Output hidden state tensor of shape (batch_size, hidden_size)
+        Returns: tuple[torch.Tensor, torch.Tensor]
+            out: torch.Tensor
+                Output tensor of shape (batch_size, output_size)
+            hs_final: torch.Tensor
+                Final hidden state of shape (num_layers, batch_size, hidden_size)
         """
         if hs_pre is None:
             hs_pre = torch.zeros(self.num_layers, input.size(0), self.hidden_size)
@@ -199,8 +202,8 @@ class GRU(nn.Module):
                 hidden_layers[layer] = hidden
             output.append(hidden)
         out = output[-1].squeeze()
-        out = self.fc(out)
-        return out
+        hs_final = torch.stack(hidden_layers, dim=0)
+        return out, hs_final
 
     def init_cell_list(self):
         """

@@ -240,15 +240,11 @@ class oneToManyRNN(nn.Module):
         if output_times < 1:
             log.error("Output times < 1.")
             raise ValueError("Output times < 1.")
+        if type(input_size) != int or type(output_size) != int:
+            raise TypeError("Wrong type of input size or output size")
         if input_size != output_size:
-            log.error(
-                "Input size and output size is different. This object stills"
-                " be created but won't work!"
-            )
-            raise ValueError(
-                "Input size and output size is different. This object stills"
-                " be created but won't work!"
-            )
+            log.error("Input size and output size is different")
+            raise ValueError("Input size and output size is different")
         super(oneToManyRNN, self).__init__()
         self.rnn = RNN(
             input_size,
@@ -328,7 +324,13 @@ class manyToManyRNN(nn.Module):
         -------
         Nothing
         """
-        if type(output_times) != int or type(input_times) != int:
+        if (
+            type(output_times) != int
+            or type(input_times) != int
+            or type(input_size) != int
+            or type(output_size) != int
+            or type(simultaneous) != bool
+        ):
             raise TypeError("type(s) of parameters passed is/are wrong.")
         if output_times < 1 or input_times < 1:
             log.error(
@@ -342,6 +344,8 @@ class manyToManyRNN(nn.Module):
         if input_size != output_size:
             log.error("Input size and output size is different.")
             raise ValueError("Input size and output size is different.")
+        if simultaneous and input_times != output_times:
+            raise ValueError("If simultaneous, input times must equal output times")
         super(manyToManyRNN, self).__init__()
         self.rnn = RNN(
             input_size,

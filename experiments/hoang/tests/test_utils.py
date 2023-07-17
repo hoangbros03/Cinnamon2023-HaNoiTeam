@@ -16,6 +16,23 @@ log.setLevel(logging.DEBUG)
 
 # Constant variables
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+CONSTANT_VARIABLES = {
+    "ONE_TO_ONE_A_SAMPLE_EPOCHS": 50,
+    "ONE_TO_ONE_A_DATASET_EPOCHS": 1500,
+    "ONE_TO_MANY_A_SAMPLE_EPOCHS": 1000,
+    "ONE_TO_MANY_A_DATASET_EPOCHS": 2500,
+    "MANY_TO_ONE_A_SAMPLE_EPOCHS": 50,
+    "MANY_TO_ONE_A_DATASET_EPOCHS": 1500,
+    "MANY_TO_MANY_NO_SIMULTANEOUS_A_SAMPLE": 100,
+    "MANY_TO_MANY_NO_SIMULTANEOUS_A_DATASET": 500,
+    "MANY_TO_MANY_SIMULTANEOUS_A_SAMPLE": 100,
+    "MANY_TO_MANY_SIMULTANEOUS_A_DATASET": 500,
+    "ONE_TO_MANY_DUMMY_DATASET": 100,
+    "MANY_TO_MANY_DUMMY_DATASET": 500,
+}
+
+# Listing the current dataset, for visual purpose only
+__current_dataset_name = ["iris", "oneToMany", "manyToMany"]
 
 
 # Necessary function
@@ -134,12 +151,13 @@ def verbose_result(
         raise Exception("Developing function...")
 
 
-def get_data(name: str) -> tuple:
+def get_data(name: str, simultaneous: bool = False) -> tuple:
     """
     Get data from scikit learn library
     Parameters
     ----------
     name: "short" name of dataset
+    simultaneous: use for many to many RNN only
     Returns
     -------
     np.float32 dataset, which is compatible with our RNN model
@@ -149,6 +167,39 @@ def get_data(name: str) -> tuple:
         iris_x = pd.DataFrame(iris.data)
         iris_y = pd.DataFrame(iris.target)
         return np.float32(iris_x.to_numpy()), np.float32(iris_y.to_numpy())
+    elif name == "oneToMany":
+        X_data, y_data = np.array([]), np.array([])
+
+        # Make dataset
+        for _ in range(CONSTANT_VARIABLES["ONE_TO_MANY_DUMMY_DATASET"]):
+            # It's hardcoded but should I change it?
+            x = np.random.rand(1)
+            y = np.array([x / 2, x / 3, x / 5, x / 4])
+            X_data = np.append(X_data, x)
+            y_data = np.append(y_data, y)
+
+        # Reshape
+        X_data = np.reshape(
+            np.float32(X_data), (CONSTANT_VARIABLES["ONE_TO_MANY_DUMMY_DATASET"], 1, 1)
+        )
+        y_data = np.reshape(
+            np.float32(y_data), (CONSTANT_VARIABLES["ONE_TO_MANY_DUMMY_DATASET"], 4, 1)
+        )
+        return X_data, y_data
+    elif name == "manyToMany":
+        # Make dataset
+        X_data = np.random.rand(CONSTANT_VARIABLES["MANY_TO_MANY_DUMMY_DATASET"], 4, 5)
+        if simultaneous:
+            y_data = X_data**2
+        else:
+            y_data1 = X_data**2
+            y_data2 = X_data / 2
+            y_data = np.concatenate((y_data1, y_data2), axis=1)
+
+        # Convert to float32
+        X_data, y_data = np.float32(X_data), np.float32(y_data)
+        return X_data, y_data
+
     else:
         raise Exception("name passed is not supported!")
 
@@ -269,9 +320,7 @@ def get_model(
 
 
 def get_and_process_data(
-    name: str,
-    test_size: float = 0.3,
-    val_size: float = 0.3,
+    name: str, test_size: float = 0.3, val_size: float = 0.3, simultaneous: bool = False
 ) -> tuple:
     """
     Function that combined the data process steps
@@ -281,19 +330,20 @@ def get_and_process_data(
     ----------
     name: name of the dataset
     test_size: size of test dataset
-    val_szie: size of validation dataset
+    val_size: size of validation dataset
+    simultaneous: use for many to many rnn only
     Returns
     -------
     Tuple of X, y dataset
     """
     # Get data
-    X, y = get_data(name)
+    X, y = get_data(name, simultaneous)
     X_train, y_train, X_val, y_val, X_test, y_test = split_dataset(
         X, y, test_size, val_size
     )
 
+    # Process the data
     if name == "iris":
-        # Process the data
         X_train, y_train, X_test, y_test = (
             torch.tensor(X_train),
             torch.tensor(y_train).squeeze().long(),
@@ -305,7 +355,17 @@ def get_and_process_data(
             X_val, y_val = (torch.tensor(X_val), torch.tensor(y_val).squeeze().long())
         log.debug(f"X_train shape: {X_train.shape}")
         log.debug(f"y_train shape: {y_train.shape}")
+    elif name == "oneToMany" or name == "manyToMany":
+        # 1. Edit sample in test of one to many DONE
+        # 2. Edit dummy sample generation DONE
+        X_train, y_train, X_test, y_test = (
+            torch.tensor(X_train),
+            torch.tensor(y_train),
+            torch.tensor(X_test),
+            torch.tensor(y_test),
+        )
+        if X_val is not None and y_val is not None:
+            X_val, y_val = (torch.tensor(X_val), torch.tensor(y_val))
     else:
         raise Exception("unsupported dataset.")
-
     return X_train, y_train, X_val, y_val, X_test, y_test

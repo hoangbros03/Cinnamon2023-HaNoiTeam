@@ -8,9 +8,7 @@ class RNNCell(nn.Module):
     Single cell of RNN model
     """
 
-    def __init__(
-        self, input_size: int, hidden_size: int, bias: bool, activation: str
-    ) -> None:
+    def __init__(self, input_size: int, hidden_size: int, activation: str, bias: bool = True) -> None:
         """
         Initialize recurrent neural network
         Parameters
@@ -96,8 +94,8 @@ class RNN(nn.Module):
         hidden_size: int,
         output_size: int,
         num_layers: int,
-        bias: bool,
-        activation="str",
+        activation: str,
+        bias: bool = True,
     ) -> None:
         """
         Recurrent Neural Network (RNN) model.
@@ -129,74 +127,25 @@ class RNN(nn.Module):
         if activation not in ["tanh", "relu"]:
             raise ValueError("Invalid activation function")
         self.fc = nn.Linear(hidden_size, output_size, bias=self.bias)
-        self.init_layer(activation)
+        self.rnn_cell = RNNCell(input_size, hidden_size, activation, num_layers)
 
-    def forward(self, input, hs_pre=None) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
         """
         Computes the forward propagation of the RNN model
         Parameters
         --------
             input: torch.Tensor
                 Input tensor of shape (batch_size, sequence_length, input_size)
-            hs_pre: torch.Tensor
-                Previous hidden state tensor of shape
-                (num_layers, batch_size, hidden_size).
-                Default is None, the initial hidden state is set to zeros
-
-        Returns: tuple[torch.Tensor, torch.Tensor]
+        Returns: 
             out: torch.Tensor
                 Output tensor of shape (batch_size, output_size)
-            hs_final: torch.Tensor
-                Final hidden state of shape (num_layers, batch_size, hidden_size)
         """
-        if hs_pre is None:
-            hs_pre = torch.zeros(self.num_layers, input.size(0), self.hidden_size)
+        h0 = torch.zeros(self.num_layers, input.size(0), self.hidden_size)
         output = []
-        hidden_layers = list(hs_pre)
-        for t in range(input.size(1)):
-            for layer in range(self.num_layers):
-                if layer == 0:
-                    hidden = self.rnn_cell_list[layer].forward(
-                        input[:, t, :], hidden_layers[layer]
-                    )
-                else:
-                    hidden = self.rnn_cell_list[layer].forward(
-                        hidden_layers[layer - 1], hidden_layers[layer]
-                    )
-                hidden_layers[layer] = hidden
-            output.append(hidden)
+        hn = h0[0, :, :]
+        for seq in range(input.size(1)):
+            hn = self.rnn_cell(input[:, seq, :], hn)
+            output.append(hn)
         out = output[-1].squeeze()
         out = self.fc(out)
-        hs_final = torch.stack(hidden_layers, dim=0)
-        return out, hs_final
-
-    def init_layer(self, activation: str):
-        """
-        Initialize the RNN cell list.
-        Parameters
-        --------
-            None
-        Returns
-        -------
-            activation: str
-                Activation function to apply to the hidden state,
-                there are 2 options: tanh and relu
-
-        """
-        self.rnn_cell_list = nn.ModuleList()
-        if activation == "tanh":
-            self.rnn_cell_list.append(
-                RNNCell(self.input_size, self.hidden_size, self.bias, "tanh")
-            )
-            for _ in range(1, self.num_layers):
-                self.rnn_cell_list.append(
-                    RNNCell(self.hidden_size, self.hidden_size, self.bias, "tanh")
-                )
-        elif activation == "relu":
-            self.rnn_cell_list.append(
-                RNNCell(self.input_size, self.hidden_size, self.bias, "relu")
-            )
-            for _ in range(1, self.num_layers):
-                self.rnn_cell_list.append(
-                    RNNCell(self.hidden_size, self.hidden_size, self.bias, "relu")
-                )
+        return out

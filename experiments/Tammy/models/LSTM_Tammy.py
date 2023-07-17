@@ -110,7 +110,7 @@ class LSTMCell(nn.Module):
         Computes the forward propagation of the LSTM cell
         Parameters
         --------
-            input: torch.Tensor
+            x: torch.Tensor
                 Input tensor of shape (batch_size, input_size).
             h_n_c: tuple[torch.Tensor, torch.Tensor]
                 Previous hidden state tensor of shape
@@ -187,58 +187,29 @@ class LSTM(nn.Module):
         self.num_layers = num_layers
         self.bias = bias
         self.output_size = output_size
-        self.fc = nn.Linear(self.hidden_size, self.output_size)
-        self.init_cell_list()
+        self.fc = nn.Linear(self.hidden_size, self.output_size, bias)
+        self.lstm_cell = LSTMCell(input_size, hidden_size, num_layers)
 
-    def forward(
-        self, input: torch.Tensor, hs_pre: tuple[torch.Tensor, torch.Tensor] = None
-    ) -> torch.Tensor:
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
         """
         Forward pass of the LSTM model.
         Parameters
         --------
           input: torch.Tensor
             The input tensor of shape (batch_size, sequence_length, input_size)
-          hs_pre: tuple[torch.Tensor, torch.Tensor]
-            Previous hidden state tensor of shape
-            ((batch_size, hidden_size), (batch_size, hidden_size))
-            Default is None, the initial hidden state is set to zeros.
-        Returns
+        Returns 
         --------
           output: torch.Tensor
-            Output hidden state tensor of shape (batch_size, hidden_size)
+            Output hidden state tensor of shape (batch_size, output_size)
         """
-        if hs_pre is None:
-            hs_pre = torch.zeros(self.num_layers, input.size(0), self.hidden_size)
+        h0 = torch.zeros(self.num_layers, input.size(0), self.hidden_size)
+        c0 = torch.zeros(self.num_layers, input.size(0), self.hidden_size)
         output = []
-        hidden_layers = list(hs_pre) + list(hs_pre)
-        for t in range(input.size(1)):
-            for layer in range(self.num_layers):
-                if layer == 0:
-                    hidden = self.lstm_cell_list[layer].forward(
-                        input[:, t, :],
-                        (hidden_layers[layer][0], hidden_layers[layer][1]),
-                    )
-                else:
-                    hidden = self.lstm_cell_list[layer].forward(
-                        hidden_layers[layer - 1][0],
-                        (hidden_layers[layer][0], hidden_layers[layer][1]),
-                    )
-                hidden_layers[layer] = hidden
-            output.append(hidden[0])
+        cn = c0[0, :, :]
+        hn = h0[0, :, :]
+        for seq in range(input.size(1)):
+            hn, cn = self.lstm_cell(input[:, seq, :], (hn, cn))
+            output.append(hn)
         out = output[-1].squeeze()
         out = self.fc(out)
         return out
-
-    def init_cell_list(self) -> None:
-        """
-        Initializes the LSTM cell list based on the number of layers.
-        """
-        self.lstm_cell_list = nn.ModuleList()
-        self.lstm_cell_list.append(
-            LSTMCell(self.input_size, self.hidden_size, self.bias)
-        )
-        for _ in range(1, self.num_layers):
-            self.lstm_cell_list.append(
-                LSTMCell(self.hidden_size, self.hidden_size, self.bias)
-            )

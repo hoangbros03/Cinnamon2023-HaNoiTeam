@@ -8,7 +8,7 @@ class GRUCell(nn.Module):
     Single cell of GRU
     """
 
-    def __init__(self, input_size: int, hidden_size: int, bias: bool = True) -> None:
+    def __init__(self, input_size: int, hidden_size: int, bias: bool = True):
         """
         Initialize gated recurrent unit cell
         Parameters
@@ -164,54 +164,26 @@ class GRU(nn.Module):
         self.num_layers = num_layers
         self.output_size = output_size
         self.bias = bias
-        self.fc = nn.Linear(self.hidden_size, self.output_size)
-        self.init_cell_list()
+        self.fc = nn.Linear(hidden_size, output_size, bias=bias)
+        self.gru_cell = GRUCell(input_size, hidden_size, num_layers)
 
-    def forward(
-        self, input: torch.Tensor, hs_pre: torch.Tensor = None
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
         """
         Forward pass of the GRU model.
         Parameters
         --------
           input: torch.Tensor
             The input tensor of shape (batch_size, sequence_length, input_size)
-          hs_pre: torch.Tensor
-            Previous hidden state tensor of shape (batch_size, hidden_size)
-            Default is None, the initial hidden state is set to zeros.
         Returns: tuple[torch.Tensor, torch.Tensor]
             out: torch.Tensor
                 Output tensor of shape (batch_size, output_size)
-            hs_final: torch.Tensor
-                Final hidden state of shape (num_layers, batch_size, hidden_size)
         """
-        if hs_pre is None:
-            hs_pre = torch.zeros(self.num_layers, input.size(0), self.hidden_size)
+        h0 = torch.zeros(self.num_layers, input.size(0), self.hidden_size)
         output = []
-        hidden_layers = list(hs_pre)
-        for t in range(input.size(1)):
-            for layer in range(self.num_layers):
-                if layer == 0:
-                    hidden = self.gru_cell_list[layer].forward(
-                        input[:, t, :], hidden_layers[layer]
-                    )
-                else:
-                    hidden = self.gru_cell_list[layer].forward(
-                        hidden_layers[layer - 1], hidden_layers[layer]
-                    )
-                hidden_layers[layer] = hidden
-            output.append(hidden)
+        hn = h0[0, :, :]
+        for seq in range(input.size(1)):
+            hn = self.gru_cell(input[:, seq, :], hn)
+            output.append(hn)
         out = output[-1].squeeze()
-        hs_final = torch.stack(hidden_layers, dim=0)
-        return out, hs_final
-
-    def init_cell_list(self):
-        """
-        Initializes the GRU cell list based on the number of layers.
-        """
-        self.gru_cell_list = nn.ModuleList()
-        self.gru_cell_list.append(GRUCell(self.input_size, self.hidden_size, self.bias))
-        for _ in range(1, self.num_layers):
-            self.gru_cell_list.append(
-                GRUCell(self.hidden_size, self.hidden_size, self.bias)
-            )
+        out = self.fc(out)
+        return out

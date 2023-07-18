@@ -4,6 +4,8 @@ import logging
 import torch
 import torch.nn as nn
 
+import experiments.hoang.models.model_utils as model_utils
+
 # Logger
 logging.basicConfig(format="%(asctime)s %(message)s")
 log = logging.getLogger("test_logger")
@@ -74,31 +76,10 @@ class RNN(nn.Module):
         self.a = torch.zeros(1, hidden_size)
         self.bias = bias
         if bias:
-            self.ba = torch.rand(1, hidden_size)
-            self.by = torch.rand(1, output_size)
-        self.activation1 = self.define_activation(activation1)
-        self.activation2 = self.define_activation(activation2)
-
-    def define_activation(self, typeActivation: str) -> None:
-        """
-        Define the activation function for this class
-        Parameters
-        ----------
-        typeActivation: type of activation function
-        Returns
-        -------
-        Nothing
-        """
-        activation1: str = typeActivation
-        if activation1 == "sigmoid":
-            return nn.Sigmoid()
-        elif activation1 == "tanh":
-            return nn.Tanh()
-        elif activation1 == "relu":
-            return nn.ReLU()
-        else:
-            log.error("Wrong type of activation. Change it to sigmoid...")
-            return nn.Sigmoid()
+            self.ba = nn.Parameter(torch.rand(1, hidden_size))
+            self.by = nn.Parameter(torch.rand(1, output_size))
+        self.activation1 = model_utils.define_activation(activation1)
+        self.activation2 = model_utils.define_activation(activation2)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """

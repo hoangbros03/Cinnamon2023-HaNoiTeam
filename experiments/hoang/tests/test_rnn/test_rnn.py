@@ -75,10 +75,11 @@ class TestRNNOneToOneModel(unittest.TestCase):
         """
         Test converage on a sample
         """
-        model = get_model("RNN", 3, 32, 8)
+        model = get_model("RNN", 3, 32, 8, bias=True)
         x_test = torch.rand(1, 3)
         y_test = torch.tensor([4])
         y_pred = model.forward(x_test)
+        init_by = model.by.clone().detach()
         initial_loss = nn.CrossEntropyLoss()(y_pred, y_test)
         for _ in range(CONSTANT_VARIABLES["ONE_TO_ONE_A_SAMPLE_EPOCHS"]):
             model.reset_a()
@@ -92,6 +93,9 @@ class TestRNNOneToOneModel(unittest.TestCase):
             )
         y_pred = model.forward(x_test)
         final_loss = nn.CrossEntropyLoss()(y_pred, y_test)
+
+        after_by = model.by.clone().detach()
+        log.debug(f"Init: {init_by}, after: {after_by}")
         self.assertLess(final_loss, initial_loss)
 
     def test_converage_on_a_dataset(self):
@@ -360,6 +364,7 @@ class TestRNNManyToManyModel(unittest.TestCase):
         Test type of the model
         """
         model = get_model("manyToManyRNN", 2, 16, 2, 3, 3, simultaneous=False)
+        # log.info(dict(model.named_parameters()))
         self.assertIsInstance(model, rnn_htb.manyToManyRNN)
 
     def test_init_model(self):
@@ -435,7 +440,15 @@ class TestRNNManyToManyModel(unittest.TestCase):
         X_test = torch.rand(1, 4, 3)
         y_test = torch.rand(1, 8, 3)
         model = get_model(
-            "manyToManyRNN", 3, 16, 3, 4, 8, activation1="tanh", simultaneous=False
+            "manyToManyRNN",
+            3,
+            16,
+            3,
+            4,
+            8,
+            activation1="tanh",
+            simultaneous=False,
+            bias=True,
         )
         loss = nn.MSELoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
@@ -443,6 +456,7 @@ class TestRNNManyToManyModel(unittest.TestCase):
         for _ in range(CONSTANT_VARIABLES["MANY_TO_MANY_NO_SIMULTANEOUS_A_SAMPLE"]):
             train(model, X_test, y_test, loss, optimizer)
         final_loss = loss(model.forward(X_test), y_test)
+
         log.info(
             f"Initial loss MTMNS sample: {initial_loss}, "
             "final loss MTMNS sample: {final_loss}"

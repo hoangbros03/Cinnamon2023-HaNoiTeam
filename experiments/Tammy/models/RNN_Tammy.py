@@ -133,8 +133,7 @@ class RNN(nn.Module):
         if activation not in ["tanh", "relu"]:
             raise ValueError("Invalid activation function")
         self.fc = nn.Linear(hidden_size, output_size, bias=self.bias)
-        self.rnn_cell = RNNCell(input_size, hidden_size,
-                                activation, num_layers)
+        self.rnn_cell = RNNCell(input_size, hidden_size, activation, num_layers)
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         """
@@ -143,7 +142,7 @@ class RNN(nn.Module):
         --------
             input: torch.Tensor
                 Input tensor of shape (batch_size, sequence_length, input_size)
-        Returns: 
+        Returns
             out: torch.Tensor
                 Output tensor of shape (batch_size, output_size)
         """

@@ -18,7 +18,8 @@ class LSTMCell(nn.Module):
           hidden_size: int
             The number of features in the hidden state h
           bias: bool
-            Optional, if False, the layer doesn't use bias weights b_ih and b_hh
+            Optional, if False, the layer doesn't use bias of
+            weights b_ih and b_hh
             Default: True
         Returns
         -------

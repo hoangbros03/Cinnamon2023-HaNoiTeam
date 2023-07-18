@@ -8,7 +8,13 @@ class RNNCell(nn.Module):
     Single cell of RNN model
     """
 
-    def __init__(self, input_size: int, hidden_size: int, activation: str, bias: bool = True) -> None:
+    def __init__(
+        self,
+        input_size: int,
+        hidden_size: int,
+        activation: str,
+        bias: bool = True,
+    ) -> None:
         """
         Initialize recurrent neural network
         Parameters
@@ -127,7 +133,8 @@ class RNN(nn.Module):
         if activation not in ["tanh", "relu"]:
             raise ValueError("Invalid activation function")
         self.fc = nn.Linear(hidden_size, output_size, bias=self.bias)
-        self.rnn_cell = RNNCell(input_size, hidden_size, activation, num_layers)
+        self.rnn_cell = RNNCell(input_size, hidden_size,
+                                activation, num_layers)
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         """

@@ -175,7 +175,8 @@ class LSTM(nn.Module):
           hidden_size: int
             The number of features in the hidden state h
           bias: bool
-            Optional, if False, the layer doesn't use bias weights b_ih and b_hh.
+            Optional, if False, the layer doesn't use bias
+            for weights b_ih and b_hh.
             Default: True
         Returns
         -------
@@ -197,7 +198,7 @@ class LSTM(nn.Module):
         --------
           input: torch.Tensor
             The input tensor of shape (batch_size, sequence_length, input_size)
-        Returns 
+        Returns
         --------
           output: torch.Tensor
             Output hidden state tensor of shape (batch_size, output_size)

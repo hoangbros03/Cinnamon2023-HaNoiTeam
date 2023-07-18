@@ -314,15 +314,9 @@ class manyToManyRNN(nn.Module):
         ):
             raise TypeError("type(s) of parameters passed is/are wrong.")
         if output_times < 1 or input_times < 1:
-            log.error(
-                "Either input times or output times < 1. It will cause errors"
-                " in the future. Please re-init the object."
-            )
-            raise ValueError(
-                "Either input times or output times < 1. It will cause errors"
-                " in the future. Please re-init the object."
-            )
-        if input_size != output_size:
+            log.error("Either input times or output times < 1")
+            raise ValueError("Either input times or output times < 1")
+        if input_size != output_size and simultaneous is False:
             log.error("Input size and output size is different.")
             raise ValueError("Input size and output size is different.")
         if simultaneous and input_times != output_times:

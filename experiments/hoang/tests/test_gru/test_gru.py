@@ -1,5 +1,5 @@
 """
-RNN test file
+GRU test file
 """
 import logging
 import unittest
@@ -7,7 +7,7 @@ import unittest
 import torch
 import torch.nn as nn
 
-import experiments.hoang.models.rnn_htb as rnn_htb
+import experiments.hoang.models.gru_htb as gru_htb
 from experiments.hoang.tests.test_utils import (
     CONSTANT_VARIABLES,
     get_and_process_data,
@@ -22,51 +22,49 @@ log.setLevel(logging.DEBUG)
 
 
 # Test classes
-class TestRNNOneToOneModel(unittest.TestCase):
+class TestGRUOneToOneModel(unittest.TestCase):
     """
-    Class handle tests for RNN one to one model
+    Class handle tests for GRU one to one model
     """
 
     def test_type_of_model(self):
         """
         Test type of the model
         """
-        model = get_model("RNN", 100, 100, 100)
-        self.assertIsInstance(model, rnn_htb.RNN)
+        model = get_model("GRU", 100, 100, 100)
+        self.assertIsInstance(model, gru_htb.GRU)
 
     def test_init_model(self):
         """
         Test model error when initialized
         """
-        get_model("RNN", 1, 32, 1, activation1="tanh")
-        get_model("RNN", 5, 128, 16)
-        get_model("RNN", 8, 64, 1, activation2="naunaunaunau")
+        get_model("GRU", 1, 32, 1, activation1="tanh")
+        get_model("GRU", 5, 128, 16)
+        get_model("GRU", 8, 64, 1, activation2="naunaunaunau")
         with self.assertRaises(TypeError):
-            get_model("RNN", 1, 512, 1, bias="ok")
+            get_model("GRU", 1, 512, 1, bias="ok")
         with self.assertRaises(ValueError):
-            get_model("RNN", -1, 512, 1)
-        with self.assertRaises(ValueError):
-            get_model("RNN", 1, -99, 16)
+            get_model("GRU", -1, 512, 1)
         with self.assertRaises(TypeError):
-            get_model("RNN", True, 16, 2)
+            get_model("GRU", True, 16, 2)
         with self.assertRaises(ValueError):
-            get_model("RNN", 1, 32, -6)
+            get_model("GRU", 1, 32, -6)
         with self.assertRaises(ValueError):
-            get_model("RNN", 1, 0, 6)
+            get_model("GRU", 0, 0, 2)
         with self.assertRaises(ValueError):
-            get_model("RNN", 1, 2, 0)
+            get_model("GRU", 1, 2, 0)
         with self.assertRaises(TypeError):
-            get_model("RNN", 1, "ok", 17)
+            get_model("GRU", 1, "ok", "ok")
 
     def test_output_of_model(self):
         """
         Test output of the model
         """
-        model = get_model("RNN", 1, 32, 4)
+        model = get_model("GRU", 1, 32, 4)
         x_test = torch.rand(1, 1)
         y_test = model.forward(x_test)
         self.assertTrue(list(y_test.shape) == list(torch.rand(1, 4).shape))
-        model = get_model("RNN", 3, 32, 8)
+        model = get_model("GRU", 3, 32, 8)
         x_test = torch.rand(3, 3)
         y_test = model.forward(x_test)
         self.assertTrue(list(y_test.shape) == list(torch.rand(3, 8).shape))
@@ -75,14 +73,13 @@ class TestRNNOneToOneModel(unittest.TestCase):
         """
         Test converage on a sample
         """
-        model = get_model("RNN", 3, 32, 8, bias=True)
+        model = get_model("GRU", 3, 32, 8, bias=True)
         x_test = torch.rand(1, 3)
         y_test = torch.tensor([4])
         y_pred = model.forward(x_test)
-        init_by = model.by.clone().detach()
         initial_loss = nn.CrossEntropyLoss()(y_pred, y_test)
         for _ in range(CONSTANT_VARIABLES["ONE_TO_ONE_A_SAMPLE_EPOCHS"]):
-            model.reset_a()
+            model.reset_h_t()
             model = train(
                 model,
                 x_test,
@@ -93,9 +90,6 @@ class TestRNNOneToOneModel(unittest.TestCase):
             )
         y_pred = model.forward(x_test)
         final_loss = nn.CrossEntropyLoss()(y_pred, y_test)
-
-        after_by = model.by.clone().detach()
-        log.debug(f"Init: {init_by}, after: {after_by}")
         self.assertLess(final_loss, initial_loss)
 
     def test_converage_on_a_dataset(self):
@@ -103,12 +97,12 @@ class TestRNNOneToOneModel(unittest.TestCase):
         Test converage on a dataset
         """
         X_train, y_train, X_val, y_val, X_test, y_test = get_and_process_data("iris")
-        model = get_model("RNN", 4, 32, 3)
+        model = get_model("GRU", 4, 32, 3)
         y_pred = model.forward(X_test)
         initial_loss = nn.CrossEntropyLoss()(y_pred, y_test) / len(y_test)
         log.debug(f"Initial loss: {initial_loss}")
         for _ in range(CONSTANT_VARIABLES["ONE_TO_ONE_A_DATASET_EPOCHS"]):
-            model.reset_a()
+            model.reset_h_t()
             model = train(
                 model,
                 X_train,
@@ -117,63 +111,61 @@ class TestRNNOneToOneModel(unittest.TestCase):
                 torch.optim.Adam(params=model.parameters(), lr=0.001),
                 False,
             )
-        model.reset_a()
+        model.reset_h_t()
         y_pred = model.forward(X_test)
         final_loss = nn.CrossEntropyLoss()(y_pred, y_test) / len(y_test)
         log.debug(f"Final loss: {final_loss}")
         self.assertLess(final_loss, initial_loss)
 
 
-class TestRNNManyToOneModel(unittest.TestCase):
+class TestGRUManyToOneModel(unittest.TestCase):
     """
-    Class holds test for RNN many to one model
+    Class holds test for GRU many to one model
     """
 
     def test_type_of_model(self):
         """
         Test type of the model
         """
-        model = get_model("manyToOneRNN", 100, 100, 100, 100)
-        self.assertIsInstance(model, rnn_htb.manyToOneRNN)
+        model = get_model("manyToOneGRU", 100, 100, 100, 100)
+        self.assertIsInstance(model, gru_htb.manyToOneGRU)
 
     def test_init_model(self):
         """
         Test model when initialized
         """
-        get_model("manyToOneRNN", 1, 32, 1, 5)
-        get_model("manyToOneRNN", 5, 128, 16, 1)
-        get_model("manyToOneRNN", 5, 128, 16, 1, activation1="ReLU")
+        get_model("manyToOneGRU", 1, 32, 1, 5)
+        get_model("manyToOneGRU", 5, 128, 16, 1)
+        get_model("manyToOneGRU", 5, 128, 16, 1, activation1="ReLU")
         with self.assertRaises(ValueError):
-            get_model("manyToOneRNN", -1, 512, 1, 0)
+            get_model("manyToOneGRU", -1, 512, 1, 0)
         with self.assertRaises(TypeError):
-            get_model("manyToOneRNN", 16, 215, 10, 2, bias="ratoke")
+            get_model("manyToOneGRU", 16, 215, 10, 2, bias="ratoke")
         with self.assertRaises(ValueError):
-            get_model("manyToOneRNN", -1, 512, 1, 0)
+            get_model("manyToOneGRU", -1, 512, 1, 0)
         with self.assertRaises(ValueError):
-            get_model("manyToOneRNN", 18, 512, 1, -8)
-        with self.assertRaises(ValueError):
-            get_model("manyToOneRNN", 1, -99, 16, 5)
+            get_model("manyToOneGRU", 18, 512, 1, -8)
         with self.assertRaises(TypeError):
-            get_model("manyToOneRNN", True, 16, 2, 2)
+            get_model("manyToOneGRU", True, 16, 2, 2)
         with self.assertRaises(ValueError):
-            get_model("manyToOneRNN", 1, 32, -6, 8)
+            get_model("manyToOneGRU", 1, 32, -6, 8)
         with self.assertRaises(ValueError):
-            get_model("manyToOneRNN", 1, 0, 6, 16)
+            get_model("manyToOneGRU", 1, 0, 0, 16)
         with self.assertRaises(ValueError):
-            get_model("manyToOneRNN", 1, 2, 0, 32)
+            get_model("manyToOneGRU", 0, 2, 8, 32)
         with self.assertRaises(TypeError):
-            get_model("manyToOneRNN", 1, "ok", 17, 32)
+            get_model("manyToOneGRU", "ok", "ok", 17, 32)
 
     def test_output_of_model(self):
         """
         Test output of the model
         """
-        model = get_model("manyToOneRNN", 1, 32, 4, 3)
+        model = get_model("manyToOneGRU", 1, 32, 4, 3)
         x_test = torch.rand(1, 3, 1)
         y_test = model.forward(x_test)
         log.debug(f"y_test shape: {y_test.shape}")
         self.assertTrue(list(y_test.shape) == list(torch.rand(1, 4).shape))
-        model = get_model("manyToOneRNN", 3, 32, 8, 9)
+        model = get_model("manyToOneGRU", 3, 32, 8, 9)
         x_test = torch.rand(3, 9, 3)
         y_test = model.forward(x_test)
         log.debug(f"y_test shape: {y_test.shape}")
@@ -183,14 +175,14 @@ class TestRNNManyToOneModel(unittest.TestCase):
         """
         Test converage on a sample
         """
-        model = get_model("manyToOneRNN", 1, 32, 16, 3)
+        model = get_model("manyToOneGRU", 1, 32, 16, 3)
         x_test = torch.rand(1, 3, 1)
         y_test = torch.tensor([1])
         y_pred = model.forward(x_test)
         initial_loss = nn.CrossEntropyLoss()(y_pred, y_test)
         optimizer = torch.optim.Adam(params=model.parameters(), lr=0.001)
         for _ in range(CONSTANT_VARIABLES["MANY_TO_ONE_A_SAMPLE_EPOCHS"]):
-            model.reset_a()
+            model.reset_h_t()
             model = train(
                 model,
                 x_test,
@@ -214,12 +206,12 @@ class TestRNNManyToOneModel(unittest.TestCase):
         )
         log.info(f"X_train shape: {X_train.shape}")
         log.info(f"X_test shape: {X_test.shape}")
-        model = get_model("manyToOneRNN", 2, 32, 3, 2)
+        model = get_model("manyToOneGRU", 2, 32, 3, 2)
         y_pred = model.forward(X_test)
         initial_loss = nn.CrossEntropyLoss()(y_pred, y_test) / len(y_test)
         log.debug(f"Initial loss: {initial_loss}")
         for _ in range(CONSTANT_VARIABLES["MANY_TO_ONE_A_DATASET_EPOCHS"]):
-            model.reset_a()
+            model.reset_h_t()
             model = train(
                 model,
                 X_train,
@@ -228,52 +220,52 @@ class TestRNNManyToOneModel(unittest.TestCase):
                 torch.optim.Adam(params=model.parameters(), lr=0.001),
                 False,
             )
-        model.reset_a()
+        model.reset_h_t()
         y_pred = model.forward(X_test)
         final_loss = nn.CrossEntropyLoss()(y_pred, y_test) / len(y_test)
         log.debug(f"Final loss: {final_loss}")
         self.assertLess(final_loss, initial_loss)
 
 
-class TestRNNOneToManyModel(unittest.TestCase):
+class TestGRUOneToManyModel(unittest.TestCase):
     """
-    Class to test RNN one to many model
+    Class to test GRU one to many model
     """
 
     def test_type_of_model(self):
         """
         Test type of the model
         """
-        model = get_model("oneToManyRNN", 1, 16, 1, output_times=2)
-        self.assertIsInstance(model, rnn_htb.oneToManyRNN)
+        model = get_model("oneToManyGRU", 1, 16, 1, output_times=2)
+        self.assertIsInstance(model, gru_htb.oneToManyGRU)
 
     def test_init_model(self):
         """
         Test when model is initialized
         """
-        get_model("oneToManyRNN", 1, 32, 1, output_times=3, activation1="tanh")
-        get_model("oneToManyRNN", 5, 128, 5, output_times=1)
-        get_model("oneToManyRNN", 8, 64, 8, output_times=9, activation2="naunaunaunau")
+        get_model("oneToManyGRU", 1, 32, 1, output_times=3, activation1="tanh")
+        get_model("oneToManyGRU", 5, 128, 5, output_times=1)
+        get_model("oneToManyGRU", 8, 64, 8, output_times=9, activation2="naunaunaunau")
         with self.assertRaises(TypeError):
-            get_model("oneToManyRNN", 5, 16, 5, output_times=0, bool="true")
+            get_model("oneToManyGRU", 5, 16, 5, output_times=0, bool="true")
         with self.assertRaises(TypeError):
-            get_model("oneToManyRNN", "9", 6, 9, output_times=1)
+            get_model("oneToManyGRU", "9", 6, 9, output_times=1)
         with self.assertRaises(TypeError):
-            get_model("oneToManyRNN", 9, 6, 9, output_times="1")
+            get_model("oneToManyGRU", 9, 6, 9, output_times="1")
         with self.assertRaises(TypeError):
-            get_model("oneToManyRNN", 9, True, 9, output_times=2)
+            get_model("oneToManyGRU", True, True, 9, output_times=2)
         with self.assertRaises(TypeError):
-            get_model("oneToManyRNN", 9, 2, 9, output_times=True)
+            get_model("oneToManyGRU", 9, 2, 9, output_times=True)
         with self.assertRaises(ValueError):
-            get_model("oneToManyRNN", 6, 6, 6, output_times=0)
+            get_model("oneToManyGRU", 6, 6, 6, output_times=0)
         with self.assertRaises(ValueError):
-            get_model("oneToManyRNN", 6, 12, 7, output_times=1)
+            get_model("oneToManyGRU", 6, 12, 7, output_times=1)
         with self.assertRaises(ValueError):
-            get_model("oneToManyRNN", 7, 12, 7, output_times=-5)
+            get_model("oneToManyGRU", 7, 12, 7, output_times=-5)
         with self.assertRaises(ValueError):
-            get_model("oneToManyRNN", 7, -12, 7, output_times=5)
+            get_model("oneToManyGRU", -7, -12, 7, output_times=5)
         with self.assertRaises(ValueError):
-            get_model("oneToManyRNN", -7, 12, -7, output_times=2)
+            get_model("oneToManyGRU", -7, 12, -7, output_times=2)
 
     def test_output_of_model(self):
         """
@@ -281,7 +273,7 @@ class TestRNNOneToManyModel(unittest.TestCase):
         """
         x_test = torch.reshape(torch.tensor([4.0]), (1, 1, 1))
         y_test = torch.reshape(torch.tensor([0.1, 0.2, 0.3, 0.4]), (1, 4, 1))
-        model = get_model("oneToManyRNN", 1, 4, 1, output_times=4, bias=True)
+        model = get_model("oneToManyGRU", 1, 4, 1, output_times=4, bias=True)
         y_pred = model.forward(x_test)
         self.assertTrue(list(y_pred.shape) == list(y_test.shape))
 
@@ -291,7 +283,7 @@ class TestRNNOneToManyModel(unittest.TestCase):
         """
         x_test = torch.reshape(torch.tensor([0.5]), (1, 1, 1))
         y_test = torch.reshape(torch.tensor([0.1, 0.2, 0.3, 0.4]), (1, 4, 1))
-        model = get_model("oneToManyRNN", 1, 4, 1, output_times=4, bias=True)
+        model = get_model("oneToManyGRU", 1, 4, 1, output_times=4, bias=True)
         optimizer = torch.optim.Adam(model.parameters(), lr=0.03)
         initial_loss = nn.MSELoss()(model.forward(x_test), y_test)
         log.info(f"Initial loss OTM sample: {initial_loss}")
@@ -319,7 +311,7 @@ class TestRNNOneToManyModel(unittest.TestCase):
         log.info(f"X_train shape: {X_train.shape}")
         log.info(f"y_train shape: {y_train.shape}")
         model = get_model(
-            "oneToManyRNN",
+            "oneToManyGRU",
             1,
             8,
             1,
@@ -349,18 +341,18 @@ class TestRNNOneToManyModel(unittest.TestCase):
         self.assertLess(final_loss, initial_loss)
 
 
-class TestRNNManyToManyModel(unittest.TestCase):
+class TestGRUManyToManyModel(unittest.TestCase):
     """
-    Class to test RNN many to many model
+    Class to test GRU many to many model
     """
 
     def test_type_of_model(self):
         """
         Test type of the model
         """
-        model = get_model("manyToManyRNN", 2, 16, 2, 3, 3, simultaneous=False)
+        model = get_model("manyToManyGRU", 2, 16, 2, 3, 3, simultaneous=False)
         # log.info(dict(model.named_parameters()))
-        self.assertIsInstance(model, rnn_htb.manyToManyRNN)
+        self.assertIsInstance(model, gru_htb.manyToManyGRU)
 
     def test_init_model(self):
         """
@@ -368,7 +360,7 @@ class TestRNNManyToManyModel(unittest.TestCase):
         """
         # Cases shouldn't raise errors
         get_model(
-            "manyToManyRNN",
+            "manyToManyGRU",
             2,
             16,
             2,
@@ -377,32 +369,34 @@ class TestRNNManyToManyModel(unittest.TestCase):
             activation1="ahuhu",
             simultaneous=False,
         )
-        get_model("manyToManyRNN", 2, 1, 2, 10, 10, bias=False, simultaneous=True)
+        get_model("manyToManyGRU", 2, 1, 3, 10, 10, bias=False, simultaneous=True)
         get_model(
-            "manyToManyRNN", 1, 16, 1, 1, 1, activation2="tanh", simultaneous=True
+            "manyToManyGRU", 1, 16, 1, 1, 1, activation2="tanh", simultaneous=True
         )
 
         # Cases should raise error
         with self.assertRaises(TypeError):
-            get_model("manyToManyRNN", 2, 1, 2, 10, 10, bias="False", simultaneous=True)
+            get_model(
+                "manyToManyGRU", 2, 1, 2.5, 10, 10, bias="False", simultaneous=True
+            )
         with self.assertRaises(TypeError):
-            get_model("manyToManyRNN", 2, 1, 2, 10, 4, bias=True, simultaneous="2")
+            get_model("manyToManyGRU", 2, 1, 2, 10, 4, bias=True, simultaneous="2")
         with self.assertRaises(TypeError):
-            get_model("manyToManyRNN", 2, 3, 2, 10, "4", bias=True, simultaneous=True)
+            get_model("manyToManyGRU", 2, 3, 2, 10, "4", bias=True, simultaneous=True)
         with self.assertRaises(TypeError):
-            get_model("manyToManyRNN", 2, 3, 2, [10], 4, bias=True, simultaneous=True)
+            get_model("manyToManyGRU", 2, 3, 2, [10], 4, bias=True, simultaneous=True)
         with self.assertRaises(TypeError):
-            get_model("manyToManyRNN", {"number": 2}, 3, 2, 10, 4, simultaneous=True)
+            get_model("manyToManyGRU", {"number": 2}, 3, 2, 10, 4, simultaneous=True)
         with self.assertRaises(ValueError):
-            get_model("manyToManyRNN", 2, 1, 1, 3, 4)
+            get_model("manyToManyGRU", 2, 1, 1, 3, 4)
         with self.assertRaises(ValueError):
-            get_model("manyToManyRNN", 0, 1, 0, 3, 4)
+            get_model("manyToManyGRU", 0, 1, 0, 3, 4)
         with self.assertRaises(ValueError):
-            get_model("manyToManyRNN", 2, 1, 2, 3, 4, simultaneous=True)
+            get_model("manyToManyGRU", 2, 1, 2, 3, 4, simultaneous=True)
         with self.assertRaises(ValueError):
-            get_model("manyToManyRNN", 2, 0, 2, 3, 4, simultaneous=False)
+            get_model("manyToManyGRU", 2, 0, -2, 3, 4, simultaneous=False)
         with self.assertRaises(ValueError):
-            get_model("manyToManyRNN", 2, 8, 2, 3, 0, simultaneous=False)
+            get_model("manyToManyGRU", 2, 8, 2, 3, 0, simultaneous=False)
 
     def test_output_of_model_no_simultaneous(self):
         """
@@ -411,7 +405,7 @@ class TestRNNManyToManyModel(unittest.TestCase):
         X_test = torch.rand(1, 4, 3)
         y_shape = list(torch.rand(1, 8, 3).shape)
         model = get_model(
-            "manyToManyRNN", 3, 16, 3, 4, 8, activation1="tanh", simultaneous=False
+            "manyToManyGRU", 3, 16, 3, 4, 8, activation1="tanh", simultaneous=False
         )
         model_output_shape = list(model.forward(X_test).shape)
         self.assertTrue(y_shape == model_output_shape)
@@ -423,7 +417,7 @@ class TestRNNManyToManyModel(unittest.TestCase):
         X_test = torch.rand(1, 4, 3)
         y_shape = list(torch.rand(1, 4, 3).shape)
         model = get_model(
-            "manyToManyRNN", 3, 16, 3, 4, 4, activation1="tanh", simultaneous=True
+            "manyToManyGRU", 3, 16, 3, 4, 4, activation1="tanh", simultaneous=True
         )
         model_output_shape = list(model.forward(X_test).shape)
         self.assertTrue(y_shape == model_output_shape)
@@ -435,7 +429,7 @@ class TestRNNManyToManyModel(unittest.TestCase):
         X_test = torch.rand(1, 4, 3)
         y_test = torch.rand(1, 8, 3)
         model = get_model(
-            "manyToManyRNN",
+            "manyToManyGRU",
             3,
             16,
             3,
@@ -465,7 +459,7 @@ class TestRNNManyToManyModel(unittest.TestCase):
         X_test = torch.rand(1, 4, 3)
         y_test = torch.rand(1, 4, 3)
         model = get_model(
-            "manyToManyRNN", 3, 16, 3, 4, 4, activation1="tanh", simultaneous=True
+            "manyToManyGRU", 3, 16, 3, 4, 4, activation1="tanh", simultaneous=True
         )
         loss = nn.MSELoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
@@ -489,7 +483,7 @@ class TestRNNManyToManyModel(unittest.TestCase):
         log.info(f"X_train shape: {X_train.shape}")
         log.info(f"y_train shape: {y_train.shape}")
         model = get_model(
-            "manyToManyRNN",
+            "manyToManyGRU",
             5,
             8,
             5,
@@ -530,7 +524,7 @@ class TestRNNManyToManyModel(unittest.TestCase):
         log.info(f"X_train shape: {X_train.shape}")
         log.info(f"y_train shape: {y_train.shape}")
         model = get_model(
-            "manyToManyRNN",
+            "manyToManyGRU",
             5,
             8,
             5,

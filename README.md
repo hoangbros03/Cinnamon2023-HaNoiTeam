@@ -1,3 +1,7 @@
+# Notes
+
+- In this branch, please use `pip install -e .` to install this package. Otherwise, some modules can't be imported
+
 # Instruction to install pre-commit
 
 Step 1: Install pre-commit package

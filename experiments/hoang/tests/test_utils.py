@@ -7,6 +7,7 @@ import torch.nn as nn
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 
+import experiments.hoang.models.gru_htb as gru_htb
 import experiments.hoang.models.rnn_htb as rnn_htb
 
 # Logging config
@@ -315,8 +316,29 @@ def get_model(
             activation2,
             simultaneous,
         )
+    elif name == "gru" or name == "GRU" or name == "oneToOneGRU":
+        return gru_htb.GRU(input_size, output_size, bias, activation1, activation2)
+    elif name == "manyToOneGRU":
+        return gru_htb.manyToOneGRU(
+            input_times, input_size, output_size, bias, activation1, activation2
+        )
+    elif name == "oneToManyGRU":
+        return gru_htb.oneToManyGRU(
+            output_times, input_size, output_size, bias, activation1, activation2
+        )
+    elif name == "manyToManyGRU":
+        return gru_htb.manyToManyGRU(
+            input_times,
+            output_times,
+            input_size,
+            output_size,
+            bias,
+            activation1,
+            activation2,
+            simultaneous,
+        )
     else:
-        raise Exception("unsupported type of RNN!")
+        raise Exception("unsupported type of model!")
 
 
 def get_and_process_data(

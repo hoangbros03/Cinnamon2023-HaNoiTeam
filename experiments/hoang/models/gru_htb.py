@@ -48,6 +48,9 @@ class GRU(nn.Module):
         ):
             raise TypeError("Type(s) of parameter(s) is wrong.")
 
+        if input_size < 1 or output_size < 1:
+            raise ValueError("Input size and/or output size can't below 1")
+
         super(GRU, self).__init__()
         self.input_size = input_size
         self.output_size = output_size
@@ -72,12 +75,13 @@ class GRU(nn.Module):
         self.activation1 = model_utils.define_activation(activation1)
         self.activation2 = model_utils.define_activation(activation2)
 
-    def forward(self, x: torch.tensor) -> torch.tensor:
+    def forward(self, x: torch.tensor, h_t: torch.tensor = None) -> torch.tensor:
         """
         Forward function of the class
         Parameters
         ----------
         x: The input
+        h_t: Use if user want something crazy. Better to leave it as it be
         Returns
         -------
         y_t: The result of RNN
@@ -85,6 +89,8 @@ class GRU(nn.Module):
         if x.clone().detach().shape[1] != self.input_size:
             log.error("Wrong input size!")
             return
+        if h_t is not None:
+            self.h_t = h_t
         z_t = self.activation1(self.w_z(x) + self.u_z(self.h_t) + self.b_z)
         r_t = self.activation1(self.w_r(x) + self.u_r(self.h_t) + self.b_r)
         h_hat_t = self.activation2(self.w_h(x) + self.u_h(r_t * self.h_t) + self.b_h)
@@ -104,8 +110,265 @@ class GRU(nn.Module):
         self.h_t = torch.zeros(1, self.output_size)
 
 
+class manyToOneGRU(nn.Module):
+    """
+    Many to one GRU class.
+    """
+
+    def __init__(
+        self,
+        input_times: int,
+        input_size: int,
+        output_size: int,
+        bias: bool = False,
+        activation1: str = "sigmoid",
+        activation2: str = "tanh",
+    ) -> None:
+        """
+        Constructor of the class.
+        Parameters
+        ----------
+        input_times: Times of inputs
+        other parameters: Same with GRU class
+        Returns
+        -------
+        Nothing
+        """
+        if type(input_times) != int:
+            raise TypeError("input times must be int")
+        if input_times < 1:
+            log.error("Input times less than 1")
+            raise ValueError("Input times less than 1")
+        super(manyToOneGRU, self).__init__()
+        self.gru = GRU(
+            input_size,
+            output_size,
+            bias,
+            activation1,
+            activation2,
+        )
+        self.input_times = input_times
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward function of this class
+        Parameters
+        ----------
+        x: Input
+        Returns
+        -------
+        Nothing
+        """
+        if x.clone().detach().shape[1] != self.input_times:
+            log.error("Wrong input size!")
+            raise ValueError("Wrong input size!")
+        y_t = None
+        for i in range(x.shape[1]):
+            y_t = self.gru.forward(x[:, i, :])
+        self.reset_h_t()
+        return y_t
+
+    def reset_h_t(self) -> None:
+        """
+        Reset self.h_t of self.gru to avoid error.
+        Parameters
+        ----------
+        Nothing
+        Returns
+        -------
+        Nothing
+        """
+        self.gru.reset_h_t()
+
+
+class oneToManyGRU(nn.Module):
+    """
+    The one to many GRU class.
+    """
+
+    def __init__(
+        self,
+        output_times: int,
+        input_size: int,
+        output_size: int,
+        bias: bool = False,
+        activation1: str = "sigmoid",
+        activation2: str = "tanh",
+    ) -> None:
+        """
+        Constructor of the class.
+        Parameters
+        ----------
+        output_times: Times of outputs
+        other parameters: Same with GRU class
+        Returns
+        -------
+        Nothing
+        """
+        if type(output_times) != int:
+            raise TypeError("Output times is not int")
+        if output_times < 1:
+            log.error("Output times < 1.")
+            raise ValueError("Output times < 1.")
+        if type(input_size) != int or type(output_size) != int:
+            raise TypeError("Wrong type of input size or output size")
+        if input_size != output_size:
+            log.error("Input size and output size is different")
+            raise ValueError("Input size and output size is different")
+        super(oneToManyGRU, self).__init__()
+        self.gru = GRU(
+            input_size,
+            output_size,
+            bias,
+            activation1,
+            activation2,
+        )
+        self.output_times = output_times
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward function of this class
+        Parameters
+        ----------
+        x: Input
+        Returns
+        -------
+        Nothing
+        """
+        if len(x.clone().detach().shape) != 3:
+            log.error("Wrong input size!")
+            return
+        result = torch.Tensor([])
+        y_t = self.gru.forward(x)
+        result = torch.cat((result, y_t), 0)
+        #         print(result)
+        for _ in range(self.output_times - 1):
+            y_t = self.gru.forward(y_t)
+            result = torch.cat((result, y_t), 0)
+        #             print(y_t)
+        self.reset_h_t()
+        return torch.reshape(
+            result, (x.shape[0], self.output_times, self.gru.output_size)
+        )  # Batch size, output times, output size
+
+    def reset_h_t(self) -> None:
+        """
+        Reset self.h_t of self.gru to avoid error.
+        Parameters
+        ----------
+        Nothing
+        Returns
+        -------
+        Nothing
+        """
+        self.gru.reset_h_t()
+
+
+class manyToManyGRU(nn.Module):
+    """
+    Many to many GRU class.
+    """
+
+    def __init__(
+        self,
+        input_times: int,
+        output_times: int,
+        input_size: int,
+        output_size: int,
+        bias: bool = False,
+        activation1: str = "sigmoid",
+        activation2: str = "sigmoid",
+        simultaneous: bool = False,
+    ) -> None:
+        """
+        Constructor of the class
+        Parameters
+        ----------
+        input_times: Times of the input
+        output_times: Times of the output
+        simultaneous: Choose if RNN receive all the inputs before
+        other parameters: Same with RNN class.
+        Returns
+        -------
+        Nothing
+        """
+        if (
+            type(output_times) != int
+            or type(input_times) != int
+            or type(input_size) != int
+            or type(output_size) != int
+            or type(simultaneous) != bool
+        ):
+            raise TypeError("type(s) of parameters passed is/are wrong.")
+        if output_times < 1 or input_times < 1:
+            log.error(
+                "Either input times or output times < 1. It will cause errors"
+                " in the future. Please re-init the object."
+            )
+            raise ValueError(
+                "Either input times or output times < 1. It will cause errors"
+                " in the future. Please re-init the object."
+            )
+        if input_size != output_size and simultaneous is False:
+            log.error("Input size and output size is different.")
+            raise ValueError("Input size and output size is different.")
+        if simultaneous and input_times != output_times:
+            raise ValueError("If simultaneous, input times must equal output times")
+        super(manyToManyGRU, self).__init__()
+        self.gru = GRU(
+            input_size,
+            output_size,
+            bias,
+            activation1,
+            activation2,
+        )
+        self.input_times = input_times
+        self.output_times = output_times
+        self.simultaneous = simultaneous
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward function of this class
+        Parameters
+        ----------
+        x: Input
+        Returns
+        -------
+        Nothing
+        """
+        if len(x.shape) != 3:
+            log.error("Wrong input size!")
+            raise ValueError("Wrong input size!")
+        result = torch.tensor([])
+        if self.simultaneous:
+            for i in range(x.shape[1]):
+                y_t = self.gru.forward(x[:, i, :])
+                result = torch.cat((result, y_t), 0)
+        else:
+            y_t = 0
+            for i in range(x.shape[1]):
+                y_t = self.gru.forward(x[:, i, :])
+
+            for _ in range(self.output_times):
+                y_t = self.gru.forward(y_t)
+                result = torch.cat((result, y_t), 0)
+        self.reset_h_t()
+        return torch.reshape(
+            result, (x.shape[0], self.output_times, self.gru.output_size)
+        )  # Batch size, output times, output size
+
+    def reset_h_t(self) -> None:
+        """
+        Reset self.h_t of self.gru to avoid error.
+        Parameters
+        ----------
+        Nothing
+        Returns
+        -------
+        Nothing
+        """
+        self.gru.reset_h_t()
+
+
 if __name__ == "__main__":
-    gru = GRU(3, 3, False)
-    result = gru.forward(torch.rand(3, 3))
-    print(result)
-    print(result.shape)
+    log.debug("Nothing here!")

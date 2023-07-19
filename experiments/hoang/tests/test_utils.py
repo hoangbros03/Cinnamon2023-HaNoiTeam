@@ -8,6 +8,7 @@ from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 
 import experiments.hoang.models.gru_htb as gru_htb
+import experiments.hoang.models.lstm_htb as lstm_htb
 import experiments.hoang.models.rnn_htb as rnn_htb
 
 # Logging config
@@ -328,6 +329,27 @@ def get_model(
         )
     elif name == "manyToManyGRU":
         return gru_htb.manyToManyGRU(
+            input_times,
+            output_times,
+            input_size,
+            output_size,
+            bias,
+            activation1,
+            activation2,
+            simultaneous,
+        )
+    elif name == "lstm" or name == "LSTM" or name == "oneToOneLSTM":
+        return lstm_htb.LSTM(input_size, output_size, bias, activation1, activation2)
+    elif name == "manyToOneLSTM":
+        return lstm_htb.manyToOneLSTM(
+            input_times, input_size, output_size, bias, activation1, activation2
+        )
+    elif name == "oneToManyLSTM":
+        return lstm_htb.oneToManyLSTM(
+            output_times, input_size, output_size, bias, activation1, activation2
+        )
+    elif name == "manyToManyLSTM":
+        return lstm_htb.manyToManyLSTM(
             input_times,
             output_times,
             input_size,

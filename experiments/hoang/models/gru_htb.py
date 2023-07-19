@@ -286,8 +286,8 @@ class manyToManyGRU(nn.Module):
         ----------
         input_times: Times of the input
         output_times: Times of the output
-        simultaneous: Choose if RNN receive all the inputs before
-        other parameters: Same with RNN class.
+        simultaneous: Choose if GRU receive all the inputs before
+        other parameters: Same with GRU class.
         Returns
         -------
         Nothing

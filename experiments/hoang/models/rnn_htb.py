@@ -378,5 +378,100 @@ class manyToManyRNN(nn.Module):
         self.rnn.reset_a()
 
 
+class manyToManyBidRNN(nn.Module):
+    """
+    Many to many Bidirectional RNN class
+    """
+
+    def __init__(
+        self,
+        input_times: int,
+        output_times: int,
+        input_size: int,
+        hidden_size: int,
+        output_size: int,
+        bias: bool = False,
+        activation1: str = "tanh",
+        activation2: str = "tanh",
+    ):
+        """
+        Constructor of the class
+        Parameters
+        ----------
+        input_times: Times of the input
+        output_times: Times of the output
+        simultaneous: Choose if RNN receive all the inputs before
+        other parameters: Same with RNN class.
+        Returns
+        -------
+        Nothing
+        """
+        if (
+            type(output_times) != int
+            or type(input_times) != int
+            or type(input_size) != int
+            or type(output_size) != int
+        ):
+            raise TypeError("type(s) of parameters passed is/are wrong.")
+        if output_times < 1 or input_times < 1:
+            log.error("Either input times or output times < 1")
+            raise ValueError("Either input times or output times < 1")
+        if output_times != input_times:
+            raise ValueError("output times not equal input times")
+        super(manyToManyBidRNN, self).__init__()
+        self.rnn = RNN(
+            input_size,
+            hidden_size,
+            output_size,
+            bias,
+            activation1,
+            activation2,
+        )
+        self.input_times = input_times
+        self.output_times = output_times
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward function of this class
+        Parameters
+        ----------
+        x: Input
+        Returns
+        -------
+        Nothing
+        """
+        if len(x.shape) != 3:
+            log.error("Wrong input size!")
+            raise ValueError("Wrong input size!")
+        result = torch.tensor([])
+
+        length = x.shape[1]
+        for i in range(length):
+            y_t = self.rnn.forward(x[:, i, :])
+        for i in range(length):
+            y_t = self.rnn.forward(x[:, length - i - 1, :])
+            result = torch.cat((result, y_t), 0)
+        self.reset_a()
+        return torch.reshape(
+            result, (x.shape[0], self.output_times, self.rnn.output_size)
+        )  # Batch size, output times, output size
+
+    def reset_a(self):
+        """
+        Reset self.a of self.rnn to avoid error.
+        Parameters
+        ----------
+        Nothing
+        Returns
+        -------
+        Nothing
+        """
+        self.rnn.reset_a()
+
+
 if __name__ == "__main__":
-    log.debug("Nothing here!")
+    # testClass = manyToManyBidRNN(4,4,5,512,20,True)
+    # print(testClass.forward(torch.rand(10,4,5)).shape)
+    # print(testClass.forward(torch.rand(10,4,5)))
+
+    log.info("nothing here!")

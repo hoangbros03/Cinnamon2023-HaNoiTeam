@@ -562,5 +562,126 @@ class TestRNNManyToManyModel(unittest.TestCase):
         self.assertLess(final_loss, initial_loss)
 
 
+class testBidRNN(unittest.TestCase):
+    """
+    Class to test bi-directional RNN
+    """
+
+    # Test type, test init, test forward,  test result
+    def test_type_of_model(self):
+        """
+        Test type of the model
+        """
+        model = get_model("manyToManyBidRNN", 2, 2, 2, 3, 3)
+        # log.info(dict(model.named_parameters()))
+        self.assertIsInstance(model, rnn_htb.manyToManyBidRNN)
+
+    def test_init_model(self):
+        """
+        Test when model is initialized
+        """
+        # Cases shouldn't raise errors
+        get_model(
+            "manyToManyBidRNN",
+            2,
+            2,
+            2,
+            output_times=3,
+            input_times=3,
+            activation1="ahuhu",
+        )
+        get_model("manyToManyBidRNN", 2, 1, 2, 10, 10, bias=False, simultaneous=True)
+        get_model(
+            "manyToManyBidRNN", 1, 16, 1, 1, 1, activation2="tanh", simultaneous=True
+        )
+
+        # Cases should raise error
+        with self.assertRaises(TypeError):
+            get_model(
+                "manyToManyBidRNN", 2, 1, 2, 10, 10, bias="False", simultaneous=True
+            )
+        with self.assertRaises(TypeError):
+            get_model("manyToManyBidRNN", 2, 1, 2, "10", 4, bias=True)
+        with self.assertRaises(TypeError):
+            get_model(
+                "manyToManyBidRNN", 2, 3, 2, 10, "4", bias=True, simultaneous=True
+            )
+        with self.assertRaises(TypeError):
+            get_model(
+                "manyToManyBidRNN", 2, 3, 2, [10], 4, bias=True, simultaneous=True
+            )
+        with self.assertRaises(TypeError):
+            get_model("manyToManyBidRNN", {"number": 2}, 3, 2, 10, 4, simultaneous=True)
+        with self.assertRaises(ValueError):
+            get_model("manyToManyBidRNN", 2, 1, 1, 3, 4)
+        with self.assertRaises(ValueError):
+            get_model("manyToManyBidRNN", 0, 1, 0, 3, 4)
+        with self.assertRaises(ValueError):
+            get_model("manyToManyBidRNN", 2, 1, 2, 3, 4, simultaneous=True)
+        with self.assertRaises(ValueError):
+            get_model("manyToManyRNN", 2, 0, 2, 3, 4, simultaneous=False)
+        with self.assertRaises(ValueError):
+            get_model("manyToManyBidRNN", 2, 8, -2, 3, 3, simultaneous=False)
+
+    def test_converage_on_a_sample(self):
+        """
+        Test converage on a sample with simultaneous
+        """
+        X_test = torch.rand(1, 4, 3)
+        y_test = torch.rand(1, 4, 3)
+        model = get_model("manyToManyBidRNN", 3, 16, 3, 4, 4, activation1="tanh")
+        loss = nn.MSELoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+        initial_loss = loss(model.forward(X_test), y_test)
+        for _ in range(CONSTANT_VARIABLES["MANY_TO_MANY_SIMULTANEOUS_A_SAMPLE"]):
+            train(model, X_test, y_test, loss, optimizer)
+        final_loss = loss(model.forward(X_test), y_test)
+        log.info(
+            f"Initial loss MTMS sample: {initial_loss}, "
+            "final loss MTMS sample: {final_loss}"
+        )
+        self.assertLess(final_loss, initial_loss)
+
+    def test_converage_on_a_dataset(self):
+        """
+        Test converage on a dataset
+        """
+        X_train, y_train, X_val, y_val, X_test, y_test = get_and_process_data(
+            "manyToMany", 0.3, 0.1, True
+        )
+        log.info(f"X_train shape: {X_train.shape}")
+        log.info(f"y_train shape: {y_train.shape}")
+        model = get_model(
+            "manyToManyBidRNN",
+            5,
+            8,
+            5,
+            input_times=4,
+            output_times=4,
+            bias=True,
+            activation1="tanh",
+            activation2="tanh",
+        )
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+        initial_loss = nn.MSELoss()(model.forward(X_test), y_test)
+        log.info(f"Initial loss MTMS dataset: {initial_loss}")
+
+        # Train on train dataset
+        for _ in range(CONSTANT_VARIABLES["MANY_TO_MANY_SIMULTANEOUS_A_DATASET"]):
+            train(
+                model,
+                X_test,
+                y_test,
+                nn.MSELoss(),
+                optimizer,
+                False,
+            )
+
+        # Eval
+        final_loss = nn.MSELoss()(model.forward(X_test), y_test)
+        log.info(f"Final loss MTMS dataset: {final_loss}")
+        self.assertLess(final_loss, initial_loss)
+
+
 if __name__ == "__main__":
     unittest.main()

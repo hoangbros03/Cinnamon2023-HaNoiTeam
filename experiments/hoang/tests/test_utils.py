@@ -317,6 +317,17 @@ def get_model(
             activation2,
             simultaneous,
         )
+    elif name == "manyToManyBidRNN":
+        return rnn_htb.manyToManyBidRNN(
+            input_times,
+            output_times,
+            input_size,
+            hidden_size,
+            output_size,
+            bias,
+            activation1,
+            activation2,
+        )
     elif name == "gru" or name == "GRU" or name == "oneToOneGRU":
         return gru_htb.GRU(input_size, output_size, bias, activation1, activation2)
     elif name == "manyToOneGRU":

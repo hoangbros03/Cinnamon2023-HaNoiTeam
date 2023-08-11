@@ -344,7 +344,7 @@ class manyToManyRNN(nn.Module):
         -------
         Nothing
         """
-        if len(x.shape) != 3:
+        if len(x.shape) != 2 and len(x.shape) != 3:
             log.error("Wrong input size!")
             raise ValueError("Wrong input size!")
         result = torch.tensor([])
@@ -440,21 +440,33 @@ class manyToManyBidRNN(nn.Module):
         -------
         Nothing
         """
-        if len(x.shape) != 3:
+        if len(x.shape) != 2 and len(x.shape) != 3:
             log.error("Wrong input size!")
             raise ValueError("Wrong input size!")
         result = torch.tensor([])
 
-        length = x.shape[1]
-        for i in range(length):
-            y_t = self.rnn.forward(x[:, i, :])
-        for i in range(length):
-            y_t = self.rnn.forward(x[:, length - i - 1, :])
-            result = torch.cat((result, y_t), 0)
-        self.reset_a()
-        return torch.reshape(
-            result, (x.shape[0], self.output_times, self.rnn.output_size)
-        )  # Batch size, output times, output size
+        if len(x.shape) == 3:
+            length = x.shape[1]
+            for i in range(length):
+                y_t = self.rnn.forward(x[:, i, :])
+            for i in range(length):
+                y_t = self.rnn.forward(x[:, length - i - 1, :])
+                result = torch.cat((result, y_t), 0)
+            self.reset_a()
+            return torch.reshape(
+                result, (x.shape[0], self.output_times, self.rnn.output_size)
+            )  # Batch size, output times, output size
+        else:
+            length = x.shape[0]
+            for i in range(length):
+                y_t = self.rnn.forward(x[i, :].unsqueeze(0))
+            for i in range(length):
+                y_t = self.rnn.forward(x[length - i - 1, :].unsqueeze(0))
+                result = torch.cat((result, y_t), 0)
+            self.reset_a()
+            return torch.reshape(
+                result, (self.output_times, self.rnn.output_size)
+            )  # Batch size, output times, output size
 
     def reset_a(self):
         """
@@ -470,8 +482,8 @@ class manyToManyBidRNN(nn.Module):
 
 
 if __name__ == "__main__":
-    # testClass = manyToManyBidRNN(4,4,5,512,20,True)
-    # print(testClass.forward(torch.rand(10,4,5)).shape)
-    # print(testClass.forward(torch.rand(10,4,5)))
+    testClass = manyToManyBidRNN(4, 4, 5, 512, 20, True)
+    print(testClass.forward(torch.rand(4, 5)).shape)
+    print(testClass.forward(torch.rand(4, 5)))
 
     log.info("nothing here!")

@@ -305,10 +305,10 @@ def batch_process(
         A np array
         """
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            result = list(executor.map(func, arr[:threshold]))
+            result = list(executor.map(func, arr))
 
         # Converting the list to a NumPy array and reshaping
-        result_array = np.reshape(np.array(result), (threshold, output_dim))
+        result_array = np.reshape(np.array(result), (batch_size, output_dim))
         return result_array
 
     # Get all raw string

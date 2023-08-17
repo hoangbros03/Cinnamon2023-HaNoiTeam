@@ -1,5 +1,6 @@
-import streamlit as st
 import unicodedata
+
+import streamlit as st
 
 
 def remove_diacritics():

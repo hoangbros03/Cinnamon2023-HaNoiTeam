@@ -1,5 +1,6 @@
 import streamlit as st
-from utils import clear_input, remove_diacritics, clear_output
+
+from utils import clear_input, clear_output, remove_diacritics
 
 
 def main():

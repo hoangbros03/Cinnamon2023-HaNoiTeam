@@ -17,6 +17,7 @@ def remove_diacritics():
 
 
 def v_spacer(height, sb=False) -> None:
+    """Add space between st components"""
     for _ in range(height):
         if sb:
             st.sidebar.write("\n")
@@ -25,13 +26,15 @@ def v_spacer(height, sb=False) -> None:
 
 
 def clear_input():
+    """Clear input"""
     st.session_state.input = ""
 
 
 def clear_output():
+    """Clear output box text"""
     st.session_state.output = ""
 
 
 # def add_diacritics(model):
-    # model = st.session_state.choice
-    # pass
+# model = st.session_state.choice
+# pass

@@ -3,6 +3,9 @@ from utils import clear_input, remove_diacritics, clear_output
 
 
 def main():
+    """
+    Main scene
+    """
     new_title = '<p style="font-size: 30px;">Welcome to our Vietnamese Diacritics \
     Restoration App!</p>'
     title = st.markdown(new_title, unsafe_allow_html=True)

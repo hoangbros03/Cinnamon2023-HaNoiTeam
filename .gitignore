@@ -1,6 +1,7 @@
 # dataset
 data/
 utils/vocab/
+runs/*/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

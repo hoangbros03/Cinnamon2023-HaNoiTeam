@@ -171,9 +171,9 @@ if __name__ == "__main__":
     n_epoch = 50
     device = torch.device("cuda")
     lr = 0.001
-    tokens_in_batch = 8000  # batch size in target language tokens
+    tokens_in_batch = 4000  # batch size in target language tokens
     batches_per_step = (
-        40000 // tokens_in_batch
+        20000 // tokens_in_batch
     )  # perform a training step, i.e. update parameters, once every so many batches
 
     # Visualize

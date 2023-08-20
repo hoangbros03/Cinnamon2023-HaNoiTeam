@@ -1,19 +1,21 @@
 import os
-import torch
-import torch.optim as optim
-import torch.nn as nn
-from tqdm import tqdm
-import numpy as np
 
-from torch.utils.tensorboard import SummaryWriter
-from dataloader.data_loader import NMT_Dataset
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
 from torch.utils.data import DataLoader
-from models.transformers import Transformer
+from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
+
+from dataloader.data_loader import NMT_Dataset
+from models.transformers.model import Transformer
 from models.transformers.schedul_optim import ScheduleOptimize
 from utils.vocab_word import Vocab
 
 
 def seed_everything(SEED):
+    """Seed everything"""
     np.random.seed(SEED)
     torch.manual_seed(SEED)
     torch.cuda.manual_seed(SEED)
@@ -21,6 +23,7 @@ def seed_everything(SEED):
 
 
 def collate_fn(batch):
+    """Collate dataset function for each batch"""
     source = [i[0] for i in batch[0]]
     target = [i[1] for i in batch[0]]
     src_len = torch.as_tensor([i[2] for i in batch[0]])
@@ -36,10 +39,13 @@ def collate_fn(batch):
 
 
 def accuracy(model, dataloader, device):
+    """Calculating accuracy mode
+    Returns: Accuracy value
+    """
     model.eval()
     total_count = 0
     diff_count = 0
-    for idx, batch in enumerate(tqdm(dataloader)):
+    for _, batch in enumerate(tqdm(dataloader)):
         x_encode, x_decode, y_train = batch[0].to(device), batch[1].to(device), batch[2]
         with torch.no_grad():
             out = model(x_encode, x_decode)
@@ -54,9 +60,12 @@ def accuracy(model, dataloader, device):
 
 
 def validate(model, dataloader, loss_fn, device):
+    """Validating the model
+    Returns: Loss value
+    """
     model.eval()
     total_loss = 0
-    for idx, batch in enumerate(tqdm(dataloader)):
+    for _, batch in enumerate(tqdm(dataloader)):
         x_encode, x_decode, y_train = (
             batch[0].to(device),
             batch[1].to(device),
@@ -74,6 +83,7 @@ def validate(model, dataloader, loss_fn, device):
 def train(
     model, dataloader_train, dataloader_eval, opt, loss_fn, device, checkpoint_path=None
 ):
+    """Train loop"""
     if checkpoint_path is not None:
         checkpoint = torch.load(checkpoint_path, map_location=device)
         model.load_state_dict(checkpoint["model"])
@@ -107,7 +117,7 @@ def train(
                 opt.update_and_step()
                 opt.zero_grad()
             total_loss += loss.item()
-            writer.add_scalar("batch_loss", loss.item(), count)
+            writer.add_scalar("batch_train_loss", loss.item(), count)
             pbar.set_postfix(
                 {
                     "train loss": total_loss / len(dataloader_train),
@@ -117,13 +127,13 @@ def train(
         eval_loss = validate(model, dataloader_eval, loss_fn, device)
         train_acc = accuracy(model, dataloader_train, device)
         val_acc = accuracy(model, dataloader_eval, device)
-        writer.add_scalar("epoch", total_loss, epoch)
-        writer.add_scalar("epoch", eval_loss, epoch)
-        writer.add_scalar("epoch", train_acc, epoch)
-        writer.add_scalar("epoch", val_acc, epoch)
+        writer.add_scalar("epoch_loss/train", total_loss, epoch)
+        writer.add_scalar("epoch_loss/eval", eval_loss, epoch)
+        writer.add_scalar("epoch_acc/train", train_acc, epoch)
+        writer.add_scalar("epoch_acc/eval", val_acc, epoch)
         print(
-            "Epoch: %s ---- Train loss: %f ---- Train accuracy: %f ---- Eval loss: %f ---- \
-                Eval accuracy: %f"
+            "Epoch: %s ---- Train loss: %f ---- Train accuracy: %f \
+                ---- Eval loss: %f ---- Eval accuracy: %f"
             % (epoch, total_loss, train_acc, eval_loss, val_acc)
         )
 
@@ -159,8 +169,8 @@ if __name__ == "__main__":
     seed_everything(69)
 
     # Load vocab
-    tgt_vocab = Vocab("utils/vocab/tgt_word_vocab.txt")
-    src_vocab = Vocab("utils/vocab/src_word_vocab.txt")
+    tgt_vocab = Vocab("utils/vocab/tokenize_tone.txt")
+    src_vocab = Vocab("utils/vocab/tokenize_notone.txt")
 
     # Model config
     d_model = 512
@@ -171,9 +181,9 @@ if __name__ == "__main__":
     n_epoch = 50
     device = torch.device("cuda")
     lr = 0.001
-    tokens_in_batch = 4000  # batch size in target language tokens
+    tokens_in_batch = 6000  # batch size in target language tokens
     batches_per_step = (
-        20000 // tokens_in_batch
+        30000 // tokens_in_batch
     )  # perform a training step, i.e. update parameters, once every so many batches
 
     # Visualize
@@ -181,8 +191,8 @@ if __name__ == "__main__":
 
     # Dataset
     data_train = NMT_Dataset(
-        "data/X_train.txt",
-        "data/Y_train.txt",
+        "data/X_train_tone.txt",
+        "data/Y_train_tone.txt",
         src_vocab,
         tgt_vocab,
         tokens_in_batch,
@@ -197,16 +207,14 @@ if __name__ == "__main__":
         data_eval, batch_size=1, shuffle=False, collate_fn=collate_fn, num_workers=4
     )
 
-    checkpoint = None  # args.checkpoint
+    checkpoint = None
     n_vocab_src = len(src_vocab)
     n_class = n_vocab_tgt = len(tgt_vocab)
-    # data = NMT_Dataset(vocab_vi=vocab_vi, vocab_ja=vocab_ja, vi_data_path=tgt_data_path, \
-    # ja_data_path=src_data_path)
 
     print("Loading data done!")
     print("Length of dataloader train: ", len(dataloader_train))
     print("Length of dataloader eval: ", len(dataloader_eval))
-    
+
     model = Transformer(
         n_vocab_src,
         n_vocab_tgt,

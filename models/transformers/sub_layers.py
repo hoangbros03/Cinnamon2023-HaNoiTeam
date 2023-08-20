@@ -1,9 +1,15 @@
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 
 
 class SelfAttention(nn.Module):
+    """_summary_
+
+    Args:
+        nn (_type_): _description_
+    """
+
     def __init__(self, d_model, d_q, d_k, d_v):
         """
         d_model: dimension model
@@ -47,12 +53,17 @@ class SelfAttention(nn.Module):
 
 
 class MultiheadAttention(nn.Module):
+    """_summary_
+
+    Args:
+        nn (_type_): _description_
+    """
+
     def __init__(self, d_model, n_head):
         """
         @d_model: dimension model
         @n_head: number of heads attention
         """
-
         super(MultiheadAttention, self).__init__()
         assert d_model % n_head == 0
         self.d_k = d_model // n_head

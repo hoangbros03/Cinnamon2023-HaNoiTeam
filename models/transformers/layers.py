@@ -1,12 +1,21 @@
-import torch.nn as nn
-import torch
-from .sub_layers import MultiheadAttention
 import numpy as np
+import torch
+import torch.nn as nn
 from torch.autograd import Variable
+
+from .sub_layers import MultiheadAttention
 
 
 class Norm(nn.Module):
+    """Calibrate normalisation"""
+
     def __init__(self, d_model, eps=1e-6):
+        """_summary_
+
+        Args:
+            d_model (_type_): _description_
+            eps (_type_, optional): _description_. Defaults to 1e-6.
+        """
         super().__init__()
 
         self.size = d_model
@@ -18,6 +27,14 @@ class Norm(nn.Module):
         self.eps = eps
 
     def forward(self, x):
+        """_summary_
+
+        Args:
+            x (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         norm = (
             self.alpha
             * (x - x.mean(dim=-1, keepdim=True))
@@ -28,6 +45,12 @@ class Norm(nn.Module):
 
 
 class EncoderLayer(nn.Module):
+    """_summary_
+
+    Args:
+        nn (_type_): _description_
+    """
+
     def __init__(self, d_model, n_head, n_hidden, dropout=0.1):
         """
         @d_model: dimension model
@@ -63,13 +86,18 @@ class EncoderLayer(nn.Module):
 
 
 class DecoderLayer(nn.Module):
+    """_summary_
+
+    Args:
+        nn (_type_): _description_
+    """
+
     def __init__(self, d_model, n_head, n_hidden, dropout=0.1):
         """
         @d_model: dimension model
         @n_head: number of heads attention
         @n_hidden: hidden state of linear layer
         """
-
         super(DecoderLayer, self).__init__()
         self.dropout1 = nn.Dropout(dropout)
         self.dropout2 = nn.Dropout(dropout)
@@ -101,6 +129,12 @@ class DecoderLayer(nn.Module):
 
 
 class PositionalEncoding(nn.Module):
+    """_summary_
+
+    Args:
+        nn (_type_): _description_
+    """
+
     def __init__(
         self,
         d_model,
@@ -129,6 +163,14 @@ class PositionalEncoding(nn.Module):
         self.d_model = d_model
 
     def forward(self, x):
+        """_summary_
+
+        Args:
+            x (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         x = x * np.sqrt(self.d_model) + Variable(
             self.pe[:, : x.size(1)], requires_grad=False
         )

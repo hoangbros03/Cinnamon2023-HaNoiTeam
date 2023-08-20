@@ -1,10 +1,18 @@
 from __future__ import absolute_import
-import torch.nn as nn
+
 import torch
-from .layers import EncoderLayer, DecoderLayer, PositionalEncoding
+import torch.nn as nn
+
+from .layers import DecoderLayer, EncoderLayer, PositionalEncoding
 
 
 class Encoder(nn.Module):
+    """_summary_
+
+    Args:
+        nn (_type_): _description_
+    """
+
     def __init__(
         self, n_vocab, d_model, n_hidden, n_head, n_layer, device="cpu", dropout=0.1
     ):
@@ -25,6 +33,15 @@ class Encoder(nn.Module):
         )
 
     def forward(self, inp, mask=None):
+        """_summary_
+
+        Args:
+            inp (_type_): _description_
+            mask (_type_, optional): _description_. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """
         embedd = self.embedd(inp)  # shape: [batch_size, seq_len_src, d_model]
         out = self.pe(embedd)  # shape: [batch_size, seq_len_src, d_model]
         for layer in self.encoder_layers:
@@ -33,6 +50,12 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
+    """_summary_
+
+    Args:
+        nn (_type_): _description_
+    """
+
     def __init__(
         self, n_vocab, d_model, n_hidden, n_head, n_layer, device="cpu", dropout=0.1
     ):
@@ -54,6 +77,17 @@ class Decoder(nn.Module):
         self.linear = nn.Linear(d_model, n_vocab)
 
     def forward(self, inp_decode, memory, tgt_mask=None, src_mask=None):
+        """_summary_
+
+        Args:
+            inp_decode (_type_): _description_
+            memory (_type_): _description_
+            tgt_mask (_type_, optional): _description_. Defaults to None.
+            src_mask (_type_, optional): _description_. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """
         embedd = self.embedd(inp_decode)  # shape: [batch_size, seq_len_tgt, d_model]
         out = self.pe(embedd)  # shape: [batch_size, seq_len_tgt, d_model]
         for layer in self.decoder_layers:
@@ -65,6 +99,12 @@ class Decoder(nn.Module):
 
 
 class Transformer(nn.Module):
+    """_summary_
+
+    Args:
+        nn (_type_): _description_
+    """
+
     def __init__(
         self,
         n_vocab_src,
@@ -77,6 +117,19 @@ class Transformer(nn.Module):
         device="cpu",
         dropout=0.1,
     ):
+        """_summary_
+
+        Args:
+            n_vocab_src (_type_): _description_
+            n_vocab_tgt (_type_): _description_
+            d_model (_type_): _description_
+            n_hidden (_type_): _description_
+            n_head (_type_): _description_
+            n_layer (_type_): _description_
+            src_pad (_type_): _description_
+            device (str, optional): _description_. Defaults to "cpu".
+            dropout (float, optional): _description_. Defaults to 0.1.
+        """
         super(Transformer, self).__init__()
         self.encoder = Encoder(
             n_vocab_src, d_model, n_hidden, n_head, n_layer, device, dropout
@@ -90,11 +143,21 @@ class Transformer(nn.Module):
         self._init_weight()
 
     def _init_weight(self):
+        """_summary_"""
         for param in self.parameters():
             if param.dim() > 1:
                 nn.init.xavier_normal_(param)
 
     def forward(self, inp_src, inp_tgt):
+        """_summary_
+
+        Args:
+            inp_src (_type_): _description_
+            inp_tgt (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         src_mask = (inp_src != self.src_pad).unsqueeze(1).to(self.device)
         tgt_mask = (
             1 - torch.triu(torch.ones(inp_tgt.size(1), inp_tgt.size(1)), diagonal=1)
@@ -105,7 +168,18 @@ class Transformer(nn.Module):
 
 
 class LabelSmooth(nn.Module):
+    """_summary_
+
+    Args:
+        nn (_type_): _description_
+    """
+
     def __init__(self, eps=0.1):
+        """_summary_
+
+        Args:
+            eps (float, optional): _description_. Defaults to 0.1.
+        """
         super(LabelSmooth, self).__init__()
         self.eps = eps
         # self.loss_fn = nn.BCEWithLogitsLoss()

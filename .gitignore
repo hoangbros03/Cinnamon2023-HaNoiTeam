@@ -1,7 +1,8 @@
-# dataset
+# project folders
 data/
 utils/vocab/
 runs/*/
+checkpoints
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

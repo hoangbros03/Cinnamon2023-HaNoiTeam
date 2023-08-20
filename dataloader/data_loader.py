@@ -1,13 +1,12 @@
-import sys
+import itertools
+
 from torch.utils.data import Dataset
 from tqdm import tqdm
-import itertools
-from utils.vocab_word import Vocab
-
-sys.path.append("..")
 
 
 class NMT_Dataset(Dataset):
+    """Create dataset for training and evaluation"""
+
     def __init__(
         self,
         src_data_file,
@@ -16,6 +15,7 @@ class NMT_Dataset(Dataset):
         tgt_vocab,
         nums_token_in_batch=1500,
     ):
+        """Initialize essential attributes"""
         super(NMT_Dataset, self).__init__()
         self.src_vocab = src_vocab
         self.tgt_vocab = tgt_vocab
@@ -30,6 +30,7 @@ class NMT_Dataset(Dataset):
         self.create_batch()
 
     def create_batch(self):
+        """Create batch for loading tokens"""
         chunks = [
             list(group) for _, group in itertools.groupby(self.data, key=lambda x: x[3])
         ]
@@ -43,17 +44,15 @@ class NMT_Dataset(Dataset):
             )
 
     def __getitem__(self, idx):
-        # return self.src_data[idx], self.tgt_data[idx]
+        """Get each item token"""
         return self.all_batches[idx]
 
     def __len__(self):
-        # return len(self.src_data)
+        """Get length of dataset"""
         return len(self.all_batches)
 
-    def __iter__(self):
-        return
-
     def _get_data(self, src_file, tgt_file):
+        """Get data by convert token to index"""
         src_data = []
         tgt_data = []
         with open(src_file, "r", encoding="utf8") as rf:
@@ -69,13 +68,3 @@ class NMT_Dataset(Dataset):
         for i in range(len(src_data)):
             assert src_data[i].shape == tgt_data[i].shape
         return src_data, tgt_data
-
-
-if __name__ == "__main__":
-    tgt_vocab = Vocab("utils/vocab/tgt_word_vocab.txt")
-    src_vocab = Vocab("utils/vocab/src_word_vocab.txt")
-    data_train = NMT_Dataset(
-        "data/X_train_200k.txt", "data/Y_train_200k.txt", src_vocab, tgt_vocab
-    )
-    print(data_train[1])
-    # print(tgt_vocab.decode(data_train[1][1]))

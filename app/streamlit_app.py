@@ -1,6 +1,9 @@
-import streamlit as st
+import sys
 
-from utils import clear_input, clear_output, remove_diacritics
+sys.path.append("/home/khanh/workspace/Cinnamon2023-HaNoiTeam")
+
+import streamlit as st
+from app_utils import add_diacritics, clear_input, clear_output, remove_diacritics
 
 
 def main():
@@ -54,7 +57,7 @@ def add_diacritics_scene():
     )
 
     # Display the select box
-    st.selectbox("Choose your model", ["Model_1", "Model_2", "Model_3"], key="choice")
+    # st.selectbox("Choose your model", ["Model_1", "Model_2", "Model_3"], key="choice")
     st.markdown("""-----""")
     # v_spacer(3)
 
@@ -70,7 +73,7 @@ def add_diacritics_scene():
         # Buttons
         col1, _, col2, _, col3 = st.columns([1, 1, 1, 1, 1])
         with col1:
-            st.button("Add diacritics")
+            st.button("Add diacritics", on_click=add_diacritics)
         with col2:
             st.button("Clear input", on_click=clear_input)
         with col3:

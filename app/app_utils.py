@@ -1,4 +1,4 @@
-import unicodedata
+import re
 
 import streamlit as st
 import torch
@@ -11,8 +11,8 @@ from utils.vocab_word import Vocab
 def load_model():
     """Load model transformer"""
     # Load vocab
-    tgt_vocab = Vocab("utils/vocab/tgt_word_vocab.txt")
-    src_vocab = Vocab("utils/vocab/src_word_vocab.txt")
+    tgt_vocab = Vocab("utils/vocab/tokenize_tone.txt")
+    src_vocab = Vocab("utils/vocab/tokenize_notone.txt")
 
     # Model config
     d_model = 512
@@ -48,12 +48,18 @@ def remove_diacritics():
     Return: Removed-accents input
     """
     input = st.session_state.input
-    normalized_input = unicodedata.normalize("NFD", input)
-    stripped_input = "".join(
-        c for c in normalized_input if not unicodedata.combining(c)
-    )
-    st.session_state.input = stripped_input
-    # return stripped_input
+    intab_l = "ạảãàáâậầấẩẫăắằặẳẵóòọõỏôộổỗồốơờớợởỡéèẻẹẽêếềệểễúùụủũưựữửừứíìịỉĩýỳỷỵỹđ"
+    intab_u = "ẠẢÃÀÁÂẬẦẤẨẪĂẮẰẶẲẴÓÒỌÕỎÔỘỔỖỒỐƠỜỚỢỞỠÉÈẺẸẼÊẾỀỆỂỄÚÙỤỦŨƯỰỮỬỪỨÍÌỊỈĨÝỲỶỴỸĐ"
+    intab = list(str(intab_l + intab_u))
+
+    outtab_l = "a" * 17 + "o" * 17 + "e" * 11 + "u" * 11 + "i" * 5 + "y" * 5 + "d"
+    outtab_u = "A" * 17 + "O" * 17 + "E" * 11 + "U" * 11 + "I" * 5 + "Y" * 5 + "D"
+    outtab = outtab_l + outtab_u
+
+    r = re.compile("|".join(intab))
+    replaces_dict = dict(zip(intab, outtab))
+
+    st.session_state.input = r.sub(lambda m: replaces_dict[m.group(0)], input)
 
 
 def v_spacer(height, sb=False) -> None:

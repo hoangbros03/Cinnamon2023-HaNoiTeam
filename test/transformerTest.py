@@ -3,8 +3,7 @@ import unittest
 import torch
 import torch.nn as nn
 from models.transformers.layers import DecoderLayer, EncoderLayer
-
-# from models.transformers.model import Transformer
+from models.transformers.model import Transformer
 from testUtil import A_DATASET_EPOCH, device, train
 
 
@@ -151,25 +150,79 @@ class TestDecoderLayer(unittest.TestCase):
         self.assertLess(final_loss, initial_loss)
 
 
-# class TestTransformer(unittest.TestCase):
-#     """
-#     Class to test transformer
-#     """
+class TestTransformer(unittest.TestCase):
+    """
+    Class to test transformer
+    """
 
-#     def test_init_no_error(self):
-#         pass
+    def test_init_no_error(self):
+        """
+        Test model init without error
+        """
+        _ = Transformer(10, 10, 8, 4, 4, 1, 20)
+        _ = Transformer(1, 1, 8, 4, 4, 1, 20)
 
-#     def test_init_with_error(self):
-#         pass
+    def test_init_with_error(self):
+        """
+        Test model init with error
+        """
+        with self.assertRaises(ValueError):
+            _ = Transformer(0, 10, 8, 4, 4, 1, 20)
+        with self.assertRaises(ValueError):
+            _ = Transformer(10, 10, 8, 5, 5, 1, 20)
+        with self.assertRaises(TypeError):
+            _ = Transformer(10, 10, 8, 4, 4, 1, "20")
+        with self.assertRaises(TypeError):
+            _ = Transformer(10, 10, 8, 4, 4, 1, 20, dropout="1")
 
-#     def test_output_shape_1(self):
-#         pass
+    def test_output_shape_1(self):
+        """
+        Test output shape of the model
+        """
+        model = Transformer(10, 10, 8, 4, 4, 1, 20)
+        output_shape = model.forward(
+            torch.rand(8, 5).long(), torch.rand(8, 5).long()
+        ).shape
+        good_output_shape = torch.rand(8, 5, 10).shape
+        self.assertTrue(list(output_shape) == list(good_output_shape))
 
-#     def test_output_shape_2(self):
-#         pass
+    def test_output_shape_2(self):
+        """
+        Test output shape of the model
+        """
+        model = Transformer(1, 1, 2, 1, 1, 1, 20)
+        output_shape = model.forward(
+            torch.rand(8, 5).long(), torch.rand(8, 5).long()
+        ).shape
+        good_output_shape = torch.rand(8, 5, 1).shape
+        self.assertTrue(list(output_shape) == list(good_output_shape))
 
-#     def test_converge(self):
-#         pass
+    def test_converge(self):
+        """
+        Test converge of the model
+        """
+        model = Transformer(10, 10, 8, 4, 4, 1, 20)
+        x_test1 = torch.rand(16, 5).long()
+        x_test2 = torch.rand(16, 5).long()
+        y_test = torch.rand(16, 5, 10)
+
+        # First forward
+        model.train()
+        model.to(device)
+        loss_fn = nn.MSELoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+        y_pred = model.forward(x_test1, x_test2)
+        initial_loss = loss_fn(y_pred, y_test)
+
+        # Train process
+        for _ in range(A_DATASET_EPOCH):
+            y_pred = model.forward(x_test1, x_test2)
+            loss = loss_fn(y_pred, y_test)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+        final_loss = loss_fn(model.forward(x_test1, x_test2), y_test)
+        self.assertLess(final_loss, initial_loss)
 
 
 if __name__ == "__main__":

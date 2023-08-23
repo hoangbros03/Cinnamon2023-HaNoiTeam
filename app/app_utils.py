@@ -1,13 +1,15 @@
-import re
 import os
+import pickle
+import re
+from collections import defaultdict
+
 import streamlit as st
 import torch
-import pickle
-from collections import defaultdict
+from nltk.tokenize.treebank import TreebankWordDetokenizer
+
 from models.transformers.model import Transformer
 from ngram_model.predict import beam_search
 from utils.vocab_word import Vocab
-from nltk.tokenize.treebank import TreebankWordDetokenizer
 
 
 @st.cache_resource
@@ -216,7 +218,7 @@ def predict_transformer_top_k(sentence, model, tgt_vocab, src_vocab, device, k=5
     tgt_tokens_tensor = torch.tensor([[tgt_vocab.sos_id]]).to(device)
     ori_sentence = sentence.split()
 
-    for i in range(src_tokens.shape[1]):
+    for _ in range(src_tokens.shape[1]):
         with torch.no_grad():
             output = model(src_tokens, tgt_tokens_tensor)
             next_tokens_scores, next_tokens = torch.topk(output[:, -1], k)

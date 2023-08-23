@@ -1,14 +1,15 @@
 import re
 import time
+
 import streamlit as st
 from app_utils import (
     load_model_2ngram,
     load_model_3ngram,
     load_model_transformer,
+    postprocess,
     predict_ngram,
     predict_transfromer,
     preprocess,
-    postprocess,
 )
 
 

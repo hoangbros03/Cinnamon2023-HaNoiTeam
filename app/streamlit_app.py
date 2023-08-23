@@ -3,6 +3,7 @@ import sys
 sys.path.append("./")
 
 import time
+
 import streamlit as st
 from buttons_action import add_diacritics, clear_input, clear_output, remove_diacritics
 
@@ -103,7 +104,8 @@ def add_diacritics_scene():
                             # text=f"Time taken: {st.session_state.time}",
                         )
                         predict_status.success(
-                            f"Completion time in {round(st.session_state.time, 3)} seconds.",
+                            f"Completion time in {round(st.session_state.time, 3)}\
+                                seconds.",
                             icon="✅",
                         )
 

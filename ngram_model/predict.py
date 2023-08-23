@@ -1,13 +1,15 @@
-import re
-import pickle
-from nltk.tokenize.treebank import TreebankWordDetokenizer
 import argparse
+import pickle
+import re
 import time
+
+from nltk.tokenize.treebank import TreebankWordDetokenizer
 
 detokenize = TreebankWordDetokenizer().detokenize
 
 
 def remove_vn_accent(word):
+    """Remove diacritics function"""
     word = re.sub("[áàảãạăắằẳẵặâấầẩẫậ]", "a", word)
     word = re.sub("[éèẻẽẹêếềểễệ]", "e", word)
     word = re.sub("[óòỏõọôốồổỗộơớờởỡợ]", "o", word)
@@ -20,7 +22,8 @@ def remove_vn_accent(word):
 
 # load model
 with open(
-    "/home/khanh/workspace/Cinnamon2023-HaNoiTeam/ngram_model/checkpoints/2gram_model.pkl",
+    "/home/khanh/workspace/Cinnamon2023-HaNoiTeam/\
+        ngram_model/checkpoints/2gram_model.pkl",
     "rb",
 ) as fin:
     model = pickle.load(fin)
@@ -28,10 +31,13 @@ with open(
 
 
 def gen_accents_word(word):
+    """Generate all possible accented words"""
     word_no_accent = remove_vn_accent(word.lower())
     all_accent_word = {word}
     for w in (
-        open("/home/khanh/workspace/Cinnamon2023-HaNoiTeam/ngram_model/vn_syllables.txt")
+        open(
+            "/home/khanh/workspace/Cinnamon2023-HaNoiTeam/ngram_model/vn_syllables.txt"
+        )
         .read()
         .splitlines()
     ):
@@ -41,8 +47,8 @@ def gen_accents_word(word):
     return all_accent_word
 
 
-# beam search
 def beam_search(words, model, k=3):
+    """Implement beam search algorithm"""
     sequences = []
     for idx, word in enumerate(words):
         if idx == 0:
@@ -62,6 +68,7 @@ def beam_search(words, model, k=3):
 
 
 def translate(sent, model_sent, k):
+    """Predict and detokenize sentence"""
     sent = sent.replace("\n", "")
     result = beam_search(sent.lower().split(), model_sent, k)
     return detokenize(result[0][0])

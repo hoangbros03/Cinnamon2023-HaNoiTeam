@@ -1,10 +1,11 @@
 import argparse
-from tqdm import tqdm
 import pickle
-from nltk.tokenize import word_tokenize
-from nltk.lm.preprocessing import padded_everygram_pipeline
-from nltk.lm import KneserNeyInterpolated
 import time
+
+from nltk.lm import KneserNeyInterpolated
+from nltk.lm.preprocessing import padded_everygram_pipeline
+from nltk.tokenize import word_tokenize
+from tqdm import tqdm
 
 
 def get_arg():

@@ -1,7 +1,4 @@
-import argparse
-import pickle
 import re
-import time
 
 from nltk.tokenize.treebank import TreebankWordDetokenizer
 
@@ -18,15 +15,6 @@ def remove_vn_accent(word):
     word = re.sub("[ýỳỷỹỵ]", "y", word)
     word = re.sub("đ", "d", word)
     return word
-
-
-# load model
-with open(
-    "ngram_model/checkpoints/2gram_model.pkl",
-    "rb",
-) as fin:
-    model = pickle.load(fin)
-    print("load model done")
 
 
 def gen_accents_word(word):
@@ -67,13 +55,13 @@ def translate(sent, model_sent, k):
     return detokenize(result[0][0])
 
 
-if __name__ == "__main__":
-    parse = argparse.ArgumentParser()
-    parse.add_argument("sent", type=str)
-    opt = parse.parse_args()
+# if __name__ == "__main__":
+#     parse = argparse.ArgumentParser()
+#     parse.add_argument("sent", type=str)
+#     opt = parse.parse_args()
 
-    start_time = time.time()
-    result = translate(opt.sent, model, k=3)
+#     start_time = time.time()
+#     result = translate(opt.sent, model, k=3)
 
-    print("Input sentence: ", opt.sent)
-    print("Predicted sentence: ", result)
+#     print("Input sentence: ", opt.sent)
+#     print("Predicted sentence: ", result)

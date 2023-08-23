@@ -1,9 +1,11 @@
+import logging
 import time
 import unicodedata
 from typing import Optional
 
 import torch
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from utils.vocab_word import Vocab
@@ -14,6 +16,18 @@ from models.transformers.model import Transformer  # isort: skip
 TGT_VOCAB_PATH = "../utils/vocab/tokenize_tone.txt"
 SRC_VOCAB_PATH = "../utils/vocab/tokenize_notone.txt"
 CHECKPOINT_PATH = "../checkpoints/model_best.pt"
+WHITELIST = ["http://localhost:8501", "127.0.0.1"]
+
+# Log configuration
+logging.basicConfig(
+    format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
+    datefmt="%H:%M:%S",
+)
+logger = logging.getLogger("input_logger")
+logger.setLevel(logging.DEBUG)
+file_handler = logging.FileHandler("input_log.log")
+file_handler.setLevel(logging.DEBUG)
+logger.addHandler(file_handler)
 
 
 def load_model():
@@ -62,6 +76,30 @@ class Text(BaseModel):
 app = FastAPI()
 
 
+@app.middleware("http")
+async def validate(request: Request, next):
+    """
+    Middleware to check valid IP
+    Parameters
+    ----------
+    request: The request given from frontend
+    next: Next function
+    Returns
+    -------
+    Message if not allowed, and nothing otherwise
+    """
+    # Client IP
+    ip = str(request.client.host)
+
+    # Check if it is allowed
+    if ip not in WHITELIST:
+        message = f"The IP {ip} trying to connect is not allowed."
+        data = {"Message": message}
+        logger.warning(f"Validate failed with message: {message}")
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=data)
+    return await next(request)
+
+
 @app.get("/")
 async def root():
     """
@@ -83,7 +121,7 @@ async def restoration(text: Text):
     # if not text_dict.preprocessed:
     #     pass # Handle later if we have time
     sentence = text.string
-    print(sentence)
+    logger.info(f"Post request name: Predict. Input: {sentence}")
     src_tokens = src_vocab.encode(sentence.split()).unsqueeze(0).to(device)
     tgt_tokens_tensor = torch.tensor([tgt_vocab.sos_id]).unsqueeze(0).to(device)
     predicted_sentence = []
@@ -115,6 +153,7 @@ async def restoration(text: Text):
     text_dict.update({"text_return": text_return})
     time_cp2 = time.time()
     print(f"Cp1: {time_cp1-start_time} cp2: {time_cp2-start_time}")
+    logger.info(f"Post request name: Predict. Output: {text_return}")
     return text_dict
 
 
@@ -125,9 +164,11 @@ async def removeDiacritic(text: Text):
     """
     text_dict = text.model_dump()
     input = text.string
+    logger.info(f"Post request name: Remove. Input: {input}")
     normalized_input = unicodedata.normalize("NFD", input)
     stripped_input = "".join(
         c for c in normalized_input if not unicodedata.combining(c)
     )
     text_dict.update({"text_return": stripped_input})
+    logger.info(f"Post request name: Remove. Output: {stripped_input}")
     return text_dict

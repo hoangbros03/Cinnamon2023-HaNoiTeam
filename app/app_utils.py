@@ -3,13 +3,11 @@ import pickle
 import re
 from collections import defaultdict
 
-import requests
 import streamlit as st
-
 import torch
+from models.transformers.model import Transformer
 from nltk.tokenize.treebank import TreebankWordDetokenizer
 
-from models.transformers.model import Transformer
 from ngram_model.predict import beam_search
 from utils.vocab_word import Vocab
 
@@ -275,4 +273,3 @@ def predict_ngram(sentences, detokenize, model, k=3):
         output = beam_search(sentence.split(), model, k)
         predicted_sentences.append(detokenize(output[0][0]))
     return predicted_sentences
-

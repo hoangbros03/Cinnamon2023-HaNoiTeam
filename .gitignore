@@ -1,6 +1,5 @@
 # project folders
 data/
-utils/vocab/
 runs/*/
 checkpoints
 

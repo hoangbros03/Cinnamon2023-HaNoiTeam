@@ -1,9 +1,10 @@
 import sys
 
-sys.path.append("/home/khanh/workspace/Cinnamon2023-HaNoiTeam")
+sys.path.append("./")
 
+import time
 import streamlit as st
-from app_utils import add_diacritics, clear_input, clear_output, remove_diacritics
+from buttons_action import add_diacritics, clear_input, clear_output, remove_diacritics
 
 
 def main():
@@ -21,9 +22,9 @@ def main():
     )
 
     st.sidebar.title("Select Activity")
-    choices = st.sidebar.selectbox("MODE", ("About", "Main App"))
+    choices = st.sidebar.selectbox("MODE", ("About us", "App"))
 
-    if choices == "Main App":
+    if choices == "App":
         title.empty()
         read_me.empty()
         add_diacritics_scene()
@@ -44,7 +45,7 @@ def add_diacritics_scene():
         """
         <style>
         /* Customize the text input box */
-        .stTextInput, .stTextArea, .stSelectbox {
+        .stTextInput, .stTextArea, .stSelectbox, .stNumberInput {
             # background-color: #f5f5f5;
             color: #333333;
             border: 1px solid #cccccc;
@@ -57,30 +58,66 @@ def add_diacritics_scene():
     )
 
     # Display the select box
-    # st.selectbox("Choose your model", ["Model_1", "Model_2", "Model_3"], key="choice")
+    st.selectbox("Choose your model", ["Transformer", "N-Gram"], key="choice")
+    if st.session_state.choice == "N-Gram":
+        st.number_input(
+            "Enter n-gram between 2 or 3", min_value=2, max_value=3, key="ngram"
+        )
+        st.number_input(
+            "Enter beam search k from 1 to 15", min_value=1, max_value=15, key="k"
+        )
     st.markdown("""-----""")
-    # v_spacer(3)
 
     with st.container():
         # Input text and output area
         st.text_input(
-            label="Please insert your word, sentence or paragraph that's need adding \
-                diacritics",
-            placeholder="Insert text",
+            label="Input",
+            placeholder="Hom nay cong ty Cinnamon to chuc mot buoi party hoanh trang",
             key="input",
         )
+
+        progress_bar = st.progress(0, text="progress bar")
+        predict_status = st.success("This is a success message!", icon="✅")
+        st.session_state.input_box_status = st.error(
+            "This is an error message!", icon="🚨"
+        )
+        predict_status.empty()
+        progress_bar.empty()
+        st.session_state.input_box_status.empty()
 
         # Buttons
         col1, _, col2, _, col3 = st.columns([1, 1, 1, 1, 1])
         with col1:
-            st.button("Add diacritics", on_click=add_diacritics)
+            if st.button("Add diacritics"):
+                # Check if input is empty
+                if st.session_state.input.strip() == "":
+                    st.session_state.input_box_status.error(
+                        "Input cannot be empty", icon="🚨"
+                    )
+                else:
+                    add_diacritics()
+                    for percent_complete in range(100):
+                        time.sleep(0.001)
+                        progress_bar.progress(
+                            percent_complete + 1,
+                            # text=f"Time taken: {st.session_state.time}",
+                        )
+                        predict_status.success(
+                            f"Completion time in {round(st.session_state.time, 3)} seconds.",
+                            icon="✅",
+                        )
+
         with col2:
             st.button("Clear input", on_click=clear_input)
         with col3:
             st.button("Strip diacritics", on_click=remove_diacritics)
 
         # Output
-        st.text_area("Output", key="output")
+        st.text_area(
+            "Output",
+            key="output",
+            placeholder="Hôm nay công ty Cinnamon tổ chức một buổi party hoành tráng",
+        )
 
         # Clear output button
         _, _, col2, _, _ = st.columns([1, 1, 1, 1, 1])

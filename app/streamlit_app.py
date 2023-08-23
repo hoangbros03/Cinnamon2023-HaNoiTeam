@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append("/home/khanh/workspace/Cinnamon2023-HaNoiTeam")
+sys.path.append("../Cinnamon2023-HaNoiTeam")
 
 import streamlit as st
 from app_utils import add_diacritics, clear_input, clear_output, remove_diacritics

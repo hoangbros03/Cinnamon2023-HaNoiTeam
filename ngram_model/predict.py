@@ -22,8 +22,7 @@ def remove_vn_accent(word):
 
 # load model
 with open(
-    "/home/khanh/workspace/Cinnamon2023-HaNoiTeam/\
-        ngram_model/checkpoints/2gram_model.pkl",
+    "ngram_model/checkpoints/2gram_model.pkl",
     "rb",
 ) as fin:
     model = pickle.load(fin)
@@ -34,13 +33,7 @@ def gen_accents_word(word):
     """Generate all possible accented words"""
     word_no_accent = remove_vn_accent(word.lower())
     all_accent_word = {word}
-    for w in (
-        open(
-            "/home/khanh/workspace/Cinnamon2023-HaNoiTeam/ngram_model/vn_syllables.txt"
-        )
-        .read()
-        .splitlines()
-    ):
+    for w in open("ngram_model/vn_syllables.txt").read().splitlines():
         w_no_accent = remove_vn_accent(w.lower())
         if w_no_accent == word_no_accent:
             all_accent_word.add(w)

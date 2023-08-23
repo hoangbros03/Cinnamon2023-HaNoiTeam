@@ -3,6 +3,7 @@ import pickle
 import re
 from collections import defaultdict
 
+import gdown
 import streamlit as st
 import torch
 from nltk.tokenize.treebank import TreebankWordDetokenizer
@@ -13,12 +14,33 @@ from utils.vocab_word import Vocab
 from models.transformers.model import Transformer  # isort: skip
 
 
+TGT_VOCAB_PATH = "utils/vocab/vn_words_tone.txt"
+SRC_VOCAB_PATH = "utils/vocab/vn_words_notone.txt"
+CHECKPOINTS_FOLDER = "./checkpoints"
+TRANS_CHECKPOINT_PATH = "./checkpoints/model_best.pt"
+TWO_GRAM_PATH = "./checkpoints/2gram_model.pkl"
+THREE_GRAM_PATH = "./checkpoints/3gram_model.pkl"
+
+TRANSFORMER_MODEL_ID = "1ea2Y06TV5zL_VMMtedoHIvvvAtDoT0bi"
+TWO_GRAM_ID = "1zJ5YAvVcYlkZI7tcdcFIJeFqxZCyyVZ9"
+THREE_GRAM_ID = "1oFQnwAyZFZRSYSKI3CVOelcMvzBIBZYS"
+
+
+def download_checkpoint(file_id, destination):
+    """Automatically download checkpoints from google drive"""
+    if not os.path.exists(CHECKPOINTS_FOLDER):
+        os.makedirs(CHECKPOINTS_FOLDER, exist_ok=True)
+    gdown.download(
+        f"https://drive.google.com/uc?id={file_id}", destination, quiet=False
+    )
+
+
 @st.cache_resource
 def load_model_transformer():
     """Load model transformer"""
     # Load vocab
-    tgt_vocab = Vocab("utils/vocab/vn_words_tone.txt")
-    src_vocab = Vocab("utils/vocab/vn_words_notone.txt")
+    tgt_vocab = Vocab(TGT_VOCAB_PATH)
+    src_vocab = Vocab(SRC_VOCAB_PATH)
 
     # Model config
     d_model = 512
@@ -27,9 +49,11 @@ def load_model_transformer():
     n_layer = 6
     device = "cuda:0"
 
-    checkpoint_path = (
-        "/home/khanh/workspace/Cinnamon2023-HaNoiTeam/checkpoints/model_best.pt"
-    )
+    if not os.path.exists(TRANS_CHECKPOINT_PATH):
+        print("Downloading transformer checkpoint file...")
+        download_checkpoint(TRANSFORMER_MODEL_ID, TRANS_CHECKPOINT_PATH)
+        print("Checkpoint file downloaded.")
+
     n_vocab_src = len(src_vocab)
     n_vocab_tgt = len(tgt_vocab)
 
@@ -43,7 +67,9 @@ def load_model_transformer():
         src_vocab.pad_id,
         device,
     )
-    model.load_state_dict(torch.load(checkpoint_path, map_location=device)["model"])
+    model.load_state_dict(
+        torch.load(TRANS_CHECKPOINT_PATH, map_location=device)["model"]
+    )
     model.to(device)
     model.eval()
 
@@ -55,13 +81,12 @@ def load_model_2ngram():
     """Load model 2ngram"""
     # Load model
     detokenize = TreebankWordDetokenizer().detokenize
-    ngram_model = str(2) + "gram_model.pkl"
-    model_path = os.path.join(
-        "/home/khanh/workspace/Cinnamon2023-HaNoiTeam/ngram_model/checkpoints",
-        ngram_model,
-    )
+    if not os.path.exists(TWO_GRAM_PATH):
+        print("Downloading 2-gram checkpoint file...")
+        download_checkpoint(TWO_GRAM_ID, TWO_GRAM_PATH)
+        print("Checkpoint file downloaded.")
     with open(
-        model_path,
+        TWO_GRAM_PATH,
         "rb",
     ) as fin:
         model = pickle.load(fin)
@@ -75,13 +100,12 @@ def load_model_3ngram():
     """Load model 3ngram"""
     # Load model
     detokenize = TreebankWordDetokenizer().detokenize
-    ngram_model = str(3) + "gram_model.pkl"
-    model_path = os.path.join(
-        "/home/khanh/workspace/Cinnamon2023-HaNoiTeam/ngram_model/checkpoints",
-        ngram_model,
-    )
+    if not os.path.exists(THREE_GRAM_PATH):
+        print("Downloading 3-gram checkpoint file...")
+        download_checkpoint(THREE_GRAM_ID, THREE_GRAM_PATH)
+        print("Checkpoint file downloaded.")
     with open(
-        model_path,
+        THREE_GRAM_PATH,
         "rb",
     ) as fin:
         model = pickle.load(fin)

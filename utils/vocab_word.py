@@ -65,6 +65,6 @@ if __name__ == "__main__":
     vocab = Vocab(
         "/home/khanh/workspace/Cinnamon2023-HaNoiTeam/utils/vocab/tokenize_tone.txt"
     )
-    encode = vocab.encode("toi di hoc".split())
+    encode = vocab.encode("Toi di hoc  toi di hoc  toi di hoc ".split())
     decode = vocab.decode(encode.tolist())
     print(encode, "\n", decode, "\n")

@@ -125,16 +125,15 @@ def train(
             )
         total_loss = total_loss / len(dataloader_train)
         eval_loss = validate(model, dataloader_eval, loss_fn, device)
-        train_acc = accuracy(model, dataloader_train, device)
+        # train_acc = accuracy(model, dataloader_train, device)
         val_acc = accuracy(model, dataloader_eval, device)
         writer.add_scalar("epoch_loss/train", total_loss, epoch)
         writer.add_scalar("epoch_loss/eval", eval_loss, epoch)
-        writer.add_scalar("epoch_acc/train", train_acc, epoch)
+        # writer.add_scalar("epoch_acc/train", train_acc, epoch)
         writer.add_scalar("epoch_acc/eval", val_acc, epoch)
         print(
-            "Epoch: %s ---- Train loss: %f ---- Train accuracy: %f \
-                ---- Eval loss: %f ---- Eval accuracy: %f"
-            % (epoch, total_loss, train_acc, eval_loss, val_acc)
+            "Epoch: %s ---- Train loss: %f ---- Eval loss: %f ---- Eval accuracy: %f"
+            % (epoch, total_loss, eval_loss, val_acc)
         )
 
         checkpoint = {
@@ -169,8 +168,8 @@ if __name__ == "__main__":
     seed_everything(69)
 
     # Load vocab
-    tgt_vocab = Vocab("utils/vocab/tokenize_tone.txt")
-    src_vocab = Vocab("utils/vocab/tokenize_notone.txt")
+    tgt_vocab = Vocab("utils/vocab/vn_words_tone.txt")
+    src_vocab = Vocab("utils/vocab/vn_words_notone.txt")
 
     # Model config
     d_model = 512
@@ -187,7 +186,7 @@ if __name__ == "__main__":
     )  # perform a training step, i.e. update parameters, once every so many batches
 
     # Visualize
-    writer = SummaryWriter("runs/training-transformer")
+    writer = SummaryWriter("runs/transformer")
 
     # Dataset
     data_train = NMT_Dataset(

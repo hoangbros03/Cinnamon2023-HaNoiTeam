@@ -2,9 +2,10 @@ import unittest
 
 import torch
 import torch.nn as nn
-from models.transformers.layers import DecoderLayer, EncoderLayer
-from models.transformers.model import Transformer
 from testUtil import A_DATASET_EPOCH, device, train
+
+from models.transformers.layers import DecoderLayer, EncoderLayer  # isort: skip
+from models.transformers.model import Transformer  # isort: skip
 
 
 class TestEncoderLayer(unittest.TestCase):

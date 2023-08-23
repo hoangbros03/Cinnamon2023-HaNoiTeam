@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-from models.transformers.layers import EncoderLayer
+
+from models.transformers.layers import EncoderLayer  # isort: skip
 
 # Variables
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

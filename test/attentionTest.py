@@ -3,8 +3,12 @@ import unittest
 
 import torch
 import torch.nn as nn
-from models.transformers.sub_layers import MultiheadAttention, SelfAttention
 from testUtil import A_DATASET_EPOCH, device, train_attention
+
+from models.transformers.sub_layers import (  # isort: skip
+    MultiheadAttention,
+    SelfAttention,
+)
 
 # Logging config
 logging.basicConfig(format="%(asctime)s %(message)s")

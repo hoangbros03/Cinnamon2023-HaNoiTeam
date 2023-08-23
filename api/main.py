@@ -17,7 +17,7 @@ CHECKPOINT_PATH = "../checkpoints/model_best.pt"
 
 def load_model():
     """Load model transformer"""
-    # Load vocab
+    # Load the vocab
     tgt_vocab = Vocab(TGT_VOCAB_PATH)
     src_vocab = Vocab(SRC_VOCAB_PATH)
 

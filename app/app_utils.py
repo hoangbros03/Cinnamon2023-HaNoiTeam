@@ -7,9 +7,10 @@ import streamlit as st
 import torch
 from nltk.tokenize.treebank import TreebankWordDetokenizer
 
-from models.transformers.model import Transformer
 from ngram_model.predict import beam_search
 from utils.vocab_word import Vocab
+
+from models.transformers.model import Transformer  # isort: skip
 
 
 @st.cache_resource

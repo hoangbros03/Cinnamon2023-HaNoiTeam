@@ -4,10 +4,11 @@ from typing import Optional
 
 import torch
 from fastapi import FastAPI
-from models.transformers.model import Transformer
 from pydantic import BaseModel
 
 from utils.vocab_word import Vocab
+
+from models.transformers.model import Transformer  # isort: skip
 
 # CONSTANT VARIABLES
 TGT_VOCAB_PATH = "../utils/vocab/tokenize_tone.txt"

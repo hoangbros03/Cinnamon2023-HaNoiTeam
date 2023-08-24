@@ -20,4 +20,4 @@ def download_file(file_id, destination):
 
 
 if __name__ == "__main__":
-    download_file()
+    download_file(FOLDER_ID, UTIL_FOLDER_NAME)

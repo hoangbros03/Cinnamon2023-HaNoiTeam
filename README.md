@@ -17,9 +17,9 @@ pip install -r requirements
 ```bash
 streamlit run app/streamlit_app.py
 ```
-Open the URL http://localhost:8501/ to test the demo.
+Open the URL http://localhost:8501/ or any URL that this command gives you, to test the demo.
 
 
-> **P/S:** It should take about 3-4 minutes to download all the checkpoints of the models depending on your Internet speed. Afterwards, you're free to use our demo.
+> **P/S:** When you first open the browser demo, it should take about 3-4 minutes to download all the checkpoints of the models depending on your Internet speed. Afterwards, you're free to use the demo.
 
 We're excited to share our this demo with you! However, please keep in mind that things might not be fully polished. If you encounter any issues or have suggestions, please feel free to open an issue. Thank you!

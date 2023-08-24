@@ -3,7 +3,7 @@ from pathlib import Path
 import gdown
 
 # CONSTANT VARIABLE
-UTIL_FOLDER_NAME = "utils"
+UTIL_FOLDER_NAME = "material"
 FOLDER_ID = "1zSbS2qicwE5oirylQjE2Qm_AG6-i27Rc"
 
 

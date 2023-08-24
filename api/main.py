@@ -1,4 +1,5 @@
 import logging
+import sys
 import time
 import unicodedata
 from typing import Optional
@@ -8,6 +9,8 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from file_download import UTIL_FOLDER_NAME
 from pydantic import BaseModel
+
+sys.path.append("../")  # noqa
 
 from utils.vocab_word import Vocab
 

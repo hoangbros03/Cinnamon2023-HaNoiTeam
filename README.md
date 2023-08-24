@@ -65,4 +65,3 @@ docker run -p <a port outside>:8000 -it api-image
 ```
 
 You can test the api by either `curl` tool or `0.0.0.0:9000/docs`
-

@@ -6,6 +6,7 @@ from typing import Optional
 import torch
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
+from file_download import UTIL_FOLDER_NAME
 from pydantic import BaseModel
 
 from utils.vocab_word import Vocab
@@ -13,9 +14,9 @@ from utils.vocab_word import Vocab
 from models.transformers.model import Transformer  # isort: skip
 
 # CONSTANT VARIABLES
-TGT_VOCAB_PATH = "../utils/vocab/tokenize_tone.txt"
-SRC_VOCAB_PATH = "../utils/vocab/tokenize_notone.txt"
-CHECKPOINT_PATH = "../checkpoints/model_best.pt"
+TGT_VOCAB_PATH = f"{UTIL_FOLDER_NAME}/vn_words_tone.txt"
+SRC_VOCAB_PATH = f"{UTIL_FOLDER_NAME}/vn_words_notone.txt"
+CHECKPOINT_PATH = f"{UTIL_FOLDER_NAME}/model_best.pt"
 WHITELIST = ["http://localhost:8501", "127.0.0.1"]
 
 # Log configuration

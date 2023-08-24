@@ -10,4 +10,4 @@ WORKDIR /api
 
 RUN python3 file_download.py
 
-CMD ["uvicorn", "main:app"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0"]

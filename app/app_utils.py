@@ -47,7 +47,7 @@ def load_model_transformer():
     n_head = 8
     n_hidden = 2048
     n_layer = 6
-    device = "cuda:0"
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
     if not os.path.exists(TRANS_CHECKPOINT_PATH):
         print("Downloading transformer checkpoint file...")

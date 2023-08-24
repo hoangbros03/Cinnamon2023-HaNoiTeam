@@ -5,6 +5,7 @@ sys.path.append("./")
 import time
 
 import streamlit as st
+from app_utils import load_model_2ngram, load_model_3ngram, load_model_transformer
 from buttons_action import add_diacritics, clear_input, clear_output, remove_diacritics
 
 
@@ -68,6 +69,11 @@ def add_diacritics_scene():
             "Enter beam search k from 1 to 15", min_value=1, max_value=15, key="k"
         )
     st.markdown("""-----""")
+
+    # Load models
+    load_model_2ngram()
+    load_model_3ngram()
+    load_model_transformer()
 
     with st.container():
         # Input text and output area

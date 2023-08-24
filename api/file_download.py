@@ -11,11 +11,10 @@ def download_file(file_id, destination):
     """Automatically download checkpoints from google drive"""
     if not Path(Path(".") / UTIL_FOLDER_NAME).exists():
         Path(UTIL_FOLDER_NAME).mkdir(parents=True, exist_ok=True)
-    gdown.download(
-        f"https://drive.google.com/uc?id={file_id}",
-        destination,
+    gdown.download_folder(
+        url=f"https://drive.google.com/drive/folders/{file_id}?usp=drive_link",
+        output=destination,
         quiet=False,
-        fuzzy=True,
     )
 
 

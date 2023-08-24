@@ -33,6 +33,9 @@ file_handler = logging.FileHandler("input_log.log")
 file_handler.setLevel(logging.DEBUG)
 logger.addHandler(file_handler)
 
+# VARIABLES
+loaded = False
+
 
 def load_model():
     """Load model transformer"""
@@ -104,6 +107,9 @@ async def validate(request: Request, next):
     return await next(request)
 
 
+model, tgt_vocab, src_vocab, device = load_model()
+
+
 @app.get("/")
 async def root():
     """
@@ -120,7 +126,7 @@ async def restoration(text: Text):
     start_time = time.time()
     text_dict = text.model_dump()
     print(text_dict)
-    model, tgt_vocab, src_vocab, device = load_model()
+
     time_cp1 = time.time()
     # if not text_dict.preprocessed:
     #     pass # Handle later if we have time

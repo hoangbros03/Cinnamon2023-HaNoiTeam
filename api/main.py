@@ -1,4 +1,5 @@
 import logging
+import sys
 import time
 import unicodedata
 from typing import Optional
@@ -6,16 +7,19 @@ from typing import Optional
 import torch
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
+from file_download import UTIL_FOLDER_NAME
 from pydantic import BaseModel
+
+sys.path.append("../")  # noqa
 
 from utils.vocab_word import Vocab
 
 from models.transformers.model import Transformer  # isort: skip
 
 # CONSTANT VARIABLES
-TGT_VOCAB_PATH = "../utils/vocab/tokenize_tone.txt"
-SRC_VOCAB_PATH = "../utils/vocab/tokenize_notone.txt"
-CHECKPOINT_PATH = "../checkpoints/model_best.pt"
+TGT_VOCAB_PATH = f"{UTIL_FOLDER_NAME}/vn_words_tone.txt"
+SRC_VOCAB_PATH = f"{UTIL_FOLDER_NAME}/vn_words_notone.txt"
+CHECKPOINT_PATH = f"{UTIL_FOLDER_NAME}/model_best.pt"
 WHITELIST = ["http://localhost:8501", "127.0.0.1"]
 
 # Log configuration
@@ -28,6 +32,9 @@ logger.setLevel(logging.DEBUG)
 file_handler = logging.FileHandler("input_log.log")
 file_handler.setLevel(logging.DEBUG)
 logger.addHandler(file_handler)
+
+# VARIABLES
+loaded = False
 
 
 def load_model():
@@ -100,6 +107,9 @@ async def validate(request: Request, next):
     return await next(request)
 
 
+model, tgt_vocab, src_vocab, device = load_model()
+
+
 @app.get("/")
 async def root():
     """
@@ -116,7 +126,7 @@ async def restoration(text: Text):
     start_time = time.time()
     text_dict = text.model_dump()
     print(text_dict)
-    model, tgt_vocab, src_vocab, device = load_model()
+
     time_cp1 = time.time()
     # if not text_dict.preprocessed:
     #     pass # Handle later if we have time

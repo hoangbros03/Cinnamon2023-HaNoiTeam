@@ -23,3 +23,45 @@ Open the URL http://localhost:8501/ or any URL that this command gives you, to t
 > **P/S:** When you first open the browser demo, it should take about 3-4 minutes to download all the checkpoints of the models depending on your Internet speed. Afterwards, you're free to use the demo.
 
 We're excited to share our this demo with you! However, please keep in mind that things might not be fully polished. If you encounter any issues or have suggestions, please feel free to open an issue. Thank you!
+
+## Run api
+
+To run the api, please following the steps:
+
+Install packages (can create conda environment like above to avoid potential package conflict)
+```
+git clone https://github.com/hoangbros03/Cinnamon2023-HaNoiTeam.git
+cd Cinnamon2023-HaNoiTeam
+pip install -r requirements.txt
+```
+
+Download necessary files (change python to python3 if you see the error)
+```
+cd api
+python file_download.py
+```
+
+Run main file (it would take some time to pre-load the model)
+```
+python main.py
+```
+
+You can test the api by either `curl` tool or `localhost:8000/docs`
+
+## Dockerize api (Streamlit version will be updated later)
+
+You can also build a docker image and run the built image if interested
+
+To build image (use sudo if your permission is denied)
+```
+git clone https://github.com/hoangbros03/Cinnamon2023-HaNoiTeam.git
+cd Cinnamon2023-HaNoiTeam
+docker build -t api-image -f ./api/Dockerfile .
+```
+
+To run image
+```
+docker run -p <a port outside>:8000 -it api-image
+```
+
+You can test the api by either `curl` tool or `0.0.0.0:9000/docs`

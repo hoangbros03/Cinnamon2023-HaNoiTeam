@@ -1,18 +1,20 @@
+import csv
 import logging
 
 import torch
-import numpy as np
-
-import csv
 
 torch.manual_seed(1)
 
+
 class RNNCell:
-    '''
-    RNN cell representing a single unit of RNN, which takes in input and a hidden 
+    """
+    RNN cell representing a single unit of RNN, which takes in input and a hidden
     state and returns output and updated hidden state
-    '''
-    def __init__(self, input_size, hidden_size, output_size, batch_size, activation1, activation2):
+    """
+
+    def __init__(
+        self, input_size, hidden_size, output_size, batch_size, activation1, activation2
+    ):
         """
         Parameters:
         ...
@@ -27,6 +29,9 @@ class RNNCell:
         self.initialize_paras()
 
     def initialize_paras(self):
+        """
+        Initialize parameters
+        """
         self.w1 = torch.rand(self.input_size, self.hidden_size)
         self.w2 = torch.rand(self.hidden_size, self.hidden_size)
         self.w3 = torch.rand(self.hidden_size, self.output_size)
@@ -43,11 +48,14 @@ class RNNCell:
         prev_h: Previous hidden state of shape batch_size * hidden_size
         Returns:
         -----------
-        Output of shape batch_size * output_size, hidden state of shape 
+        Output of shape batch_size * output_size, hidden state of shape
         batch_size * hidden_size
         """
         h = self.activation1.forward(
-            torch.add(torch.add(torch.matmul(x, self.w1), self.b1), torch.add(torch.matmul(prev_h, self.w2), self.b2))
+            torch.add(
+                torch.add(torch.matmul(x, self.w1), self.b1),
+                torch.add(torch.matmul(prev_h, self.w2), self.b2),
+            )
         )
         out = self.activation2.forward(torch.add(torch.matmul(h, self.w3), self.b3))
         return out, h
@@ -103,13 +111,20 @@ class RNNModel:
             logging.error(f"Wrong input size. Input size expected: {self.input_size}")
         timestep = x.size(0)
         curr_h = torch.zeros(size=(self.batch_size, self.hidden_size))
-        cell = RNNCell(self.input_size, self.hidden_size, self.output_size, self.batch_size, self.activation1, self.activation2)
+        cell = RNNCell(
+            self.input_size,
+            self.hidden_size,
+            self.output_size,
+            self.batch_size,
+            self.activation1,
+            self.activation2,
+        )
         output = torch.zeros(size=(timestep, self.batch_size, self.output_size))
         for i in range(timestep):
             out, curr_h = cell.forward(x[i, :, :], curr_h)
             output[i, :, :] = out
         return output
-    
+
     # def compute_loss(self, pred: torch.Tensor, target: torch.Tensor):
     #     if pred.size() != target.size():
     #         logging.error("Wrong prediction value size")
@@ -136,19 +151,22 @@ class RNNModel:
             return torch.nn.ReLU()
 
 
-
 rows = []
 rows_output = []
-with open('experiments/an/data.csv','r') as file:
-    reader = csv.reader(file, quoting=csv.QUOTE_NONNUMERIC, delimiter=',',)
+with open("experiments/an/data.csv", "r") as file:
+    reader = csv.reader(
+        file,
+        quoting=csv.QUOTE_NONNUMERIC,
+        delimiter=",",
+    )
     for row in reader:
         rows.append(row[:19])
         rows_output.append(row[1:])
-        
+
 # print(rows)
 X_train = torch.Tensor([rows])
 Y_train = torch.Tensor([rows_output])
-model = RNNModel(19,19,19,30, "relu", "relu")
+model = RNNModel(19, 19, 19, 30, "relu", "relu")
 # print(model.forward(X_train))
 Y_pred = model.forward(X_train)
 loss_func = torch.nn.MSELoss()
